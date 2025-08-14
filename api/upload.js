@@ -30,22 +30,43 @@ module.exports = async function handler(req, res) {
         // Convert base64 to buffer
         const buffer = Buffer.from(imageData, 'base64');
         
-        // Create FormData using proper API
-        const FormData = require('form-data');
-        const form = new FormData();
-        form.append('file', buffer, {
-            filename: fileName || 'house-facade.jpg',
-            contentType: contentType || 'image/jpeg'
-        });
+        // Create multipart/form-data manually (simpler approach)
+        const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);
+        const formData = [
+            `--${boundary}`,
+            `Content-Disposition: form-data; name="file"; filename="${fileName || 'house-facade.jpg'}"`,
+            `Content-Type: ${contentType || 'image/jpeg'}`,
+            '',
+            buffer.toString('binary'),
+            `--${boundary}--`
+        ];
+        
+        const body = formData.join('\r\n');
         
         // Upload to Replicate
+        console.log('Starting Replicate upload with:', {
+            apiKeyLength: apiKey.length,
+            apiKeyPrefix: apiKey.substring(0, 3),
+            bufferSize: buffer.length,
+            fileName,
+            contentType,
+            boundary
+        });
+        
         const response = await fetch('https://api.replicate.com/v1/uploads', {
             method: 'POST',
             headers: {
                 'Authorization': `Token ${apiKey}`,
-                ...form.getHeaders()
+                'Content-Type': `multipart/form-data; boundary=${boundary}`,
+                'Content-Length': Buffer.byteLength(body)
             },
-            body: form
+            body: body
+        });
+        
+        console.log('Replicate response:', {
+            status: response.status,
+            statusText: response.statusText,
+            headers: Object.fromEntries(response.headers.entries())
         });
         
         if (!response.ok) {
