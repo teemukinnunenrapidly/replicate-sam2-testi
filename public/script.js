@@ -295,14 +295,9 @@ class ReplicateAPITester {
 
         const processType = document.getElementById('processType');
         const isSegmentationOnly = processType && processType.value === 'segmentation_only';
-
-        if (processType) {
-            if (isSegmentationOnly) {
-                processType.value = 'segmentation_only'; // Ensure it's set to segmentation_only
-            } else {
-                processType.value = 'painting'; // Ensure it's set to painting
-            }
-        }
+        
+        console.log('Process type:', processType ? processType.value : 'not found');
+        console.log('Is segmentation only:', isSegmentationOnly);
 
         this.showStatus('Valmistellaan prosessia...', 'info');
         this.showProgress(0);
@@ -450,17 +445,32 @@ class ReplicateAPITester {
             if (prediction.status === 'succeeded') {
                 console.log('Prediction succeeded:', prediction);
                 
-                // Käsittele FileOutput objects (Replicate API v1.0.0+)
-                if (prediction.output && Array.isArray(prediction.output)) {
-                    // Uusi formaatti - FileOutput objects
-                    const processedOutput = prediction.output.map(fileOutput => {
-                        if (typeof fileOutput === 'object' && fileOutput.url) {
-                            return fileOutput.url; // Käytä URL:ia suoraan
-                        } else if (typeof fileOutput === 'string') {
-                            return fileOutput; // Vanha formaatti - suora URL
+                // Käsittele SAM-2 output formaatti
+                if (prediction.output) {
+                    let processedOutput = [];
+                    
+                    if (Array.isArray(prediction.output)) {
+                        // Array formaatti - FileOutput objects tai stringit
+                        processedOutput = prediction.output.map(fileOutput => {
+                            if (typeof fileOutput === 'object' && fileOutput.url) {
+                                return fileOutput.url; // Käytä URL:ia suoraan
+                            } else if (typeof fileOutput === 'string') {
+                                return fileOutput; // Vanha formaatti - suora URL
+                            }
+                            return fileOutput;
+                        });
+                    } else if (typeof prediction.output === 'object') {
+                        // Object formaatti - SAM-2 specific
+                        if (prediction.output.combined_mask) {
+                            processedOutput.push(prediction.output.combined_mask);
                         }
-                        return fileOutput;
-                    });
+                        if (prediction.output.individual_masks && Array.isArray(prediction.output.individual_masks)) {
+                            processedOutput = processedOutput.concat(prediction.output.individual_masks);
+                        }
+                    } else if (typeof prediction.output === 'string') {
+                        // String formaatti - suora URL
+                        processedOutput = [prediction.output];
+                    }
                     
                     // Korvaa output käsitellyllä versiolla
                     prediction.processedOutput = processedOutput;
