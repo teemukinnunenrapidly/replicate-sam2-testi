@@ -253,6 +253,7 @@ class ReplicateAPITester {
         const reader = new FileReader();
         reader.onload = (e) => {
             this.currentImage = file;
+            this.currentImageDataUrl = e.target.result; // Aseta data URL
             this.showImagePreview(e.target.result);
         };
         reader.readAsDataURL(file);
