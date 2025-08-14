@@ -389,13 +389,17 @@ class ReplicateAPITester {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
+                // Muunna suomenkielinen prompt englanniksi
+                const finnishPrompt = document.getElementById('promptType')?.value || 'text';
+                const englishPrompt = this.translatePromptToEnglish(finnishPrompt);
+                
+                const body = JSON.stringify({
                     imageData: imageDataUrl,
-                    promptType: document.getElementById('promptType')?.value || 'text',
+                    promptType: englishPrompt,
                     pointsPerSide: parseInt(document.getElementById('pointsPerSide')?.value) || 32,
                     predIouThresh: parseFloat(document.getElementById('predIouThresh')?.value) || 0.88,
                     stabilityScoreThresh: parseFloat(document.getElementById('stabilityScoreThresh')?.value) || 0.95
-                })
+                });
             });
 
             if (!response.ok) {
@@ -503,6 +507,79 @@ class ReplicateAPITester {
         }
         
         throw new Error(`Prediction ${predictionId} did not complete within ${maxAttempts * 5 / 60} minutes. Consider trying again later.`);
+    }
+
+    loadOptimizedImage(imageUrl, imageElement) {
+        // Luo canvas kuvaa optimoimaan
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Aseta optimoitu koko (max 800x600)
+        const maxWidth = 800;
+        const maxHeight = 600;
+        
+        const img = new Image();
+        img.crossOrigin = 'anonymous'; // CORS tuki
+        
+        img.onload = function() {
+            // Laske uusi koko säilyttäen aspect ratio
+            let { width, height } = img;
+            
+            if (width > maxWidth) {
+                height = (height * maxWidth) / width;
+                width = maxWidth;
+            }
+            
+            if (height > maxHeight) {
+                width = (width * maxHeight) / height;
+                height = maxHeight;
+            }
+            
+            // Aseta canvas koko
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Piirrä kuva canvas:iin optimoidulla koolla
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Muunna canvas data URL:ksi (JPEG, 80% quality)
+            const optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            
+            // Näytä optimoitu kuva
+            imageElement.src = optimizedDataUrl;
+            
+            console.log(`Image optimized: ${img.width}x${img.height} → ${width}x${height}, quality: 80%`);
+        };
+        
+        img.onerror = function() {
+            console.error('Failed to load image for optimization:', imageUrl);
+            // Fallback alkuperäiseen URL:iin
+            imageElement.src = imageUrl;
+        };
+        
+        img.src = imageUrl;
+    }
+
+    translatePromptToEnglish(finnishPrompt) {
+        // Muunna suomenkieliset promptit englanniksi
+        const translations = {
+            'text': 'text',
+            'point': 'point',
+            'box': 'box',
+            'mask': 'mask',
+            'teksti': 'text',
+            'piste': 'point',
+            'laatikko': 'box',
+            'naamio': 'mask'
+        };
+        
+        // Jos prompt on suomenkielinen, käytä käännöstä
+        if (translations[finnishPrompt.toLowerCase()]) {
+            return translations[finnishPrompt.toLowerCase()];
+        }
+        
+        // Jos prompt on jo englanniksi, palauta se sellaisenaan
+        return finnishPrompt;
     }
 
     updateProgress(status, attempts, elapsedTime) {
@@ -778,7 +855,8 @@ class ReplicateAPITester {
                     // Näytä ensimmäinen segmentoitu kuva
                     const imageUrl = outputToUse[0];
                     if (typeof imageUrl === 'string' && imageUrl.startsWith('http')) {
-                        segmentationResultImage.src = imageUrl;
+                        // Optimoi kuva ennen näyttämistä
+                        this.loadOptimizedImage(imageUrl, segmentationResultImage);
                         segmentCount.textContent = outputToUse.length;
                     } else {
                         console.error('Invalid image URL:', imageUrl);
