@@ -323,7 +323,9 @@ class ReplicateAPITester {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    imageData: base64Data
+                    imageData: base64Data,
+                    fileName: this.currentImage.name || 'house-facade.jpg',
+                    contentType: this.currentImage.type || 'image/jpeg'
                 })
             });
             

@@ -12,24 +12,41 @@ export default async function handler(req, res) {
             return res.status(500).json({ error: 'API key not configured' });
         }
 
-        // Hae kuva request body:stä
-        const { imageData } = req.body;
+        // Hae kuva request body:stä (base64)
+        const { imageData, fileName, contentType } = req.body;
         
         if (!imageData) {
             return res.status(400).json({ error: 'Image data required' });
         }
 
+        // Muunna base64 buffer:ksi
+        const buffer = Buffer.from(imageData, 'base64');
+        
+        // Luo multipart/form-data manuaalisesti
+        const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);
+        const formData = [];
+        
+        // Lisää tiedosto
+        formData.push(
+            `--${boundary}`,
+            `Content-Disposition: form-data; name="file"; filename="${fileName || 'house-facade.jpg'}"`,
+            `Content-Type: ${contentType || 'image/jpeg'}`,
+            '',
+            buffer.toString('binary'),
+            `--${boundary}--`
+        );
+        
+        const body = formData.join('\r\n');
+        
         // Lähetä kuva Replicate:lle
         const response = await fetch('https://api.replicate.com/v1/uploads', {
             method: 'POST',
             headers: {
                 'Authorization': `Token ${apiKey}`,
-                'Content-Type': 'application/json'
+                'Content-Type': `multipart/form-data; boundary=${boundary}`,
+                'Content-Length': Buffer.byteLength(body)
             },
-            body: JSON.stringify({
-                name: 'house-facade.jpg',
-                content_type: 'image/jpeg'
-            })
+            body: body
         });
 
         if (!response.ok) {
