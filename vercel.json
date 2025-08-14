@@ -3,15 +3,6 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".",
   "functions": {
-    "api/upload.js": {
-      "maxDuration": 30
-    },
-    "api/upload-simple.js": {
-      "maxDuration": 10
-    },
-    "api/upload-test.js": {
-      "maxDuration": 10
-    },
     "api/predictions/route.js": {
       "maxDuration": 30
     },
@@ -20,9 +11,6 @@
     },
     "api/get-api-key.js": {
       "maxDuration": 10
-    },
-    "api/test.js": {
-      "maxDuration": 5
     }
   },
   "headers": [
