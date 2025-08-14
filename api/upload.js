@@ -1,39 +1,49 @@
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
+    // Validate request method
     if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
+        return res.status(405).json({ 
+            error: 'Method not allowed',
+            allowedMethods: ['POST']
+        });
     }
     
     try {
+        // Validate environment configuration
         const apiKey = process.env.REPLICATE_API_TOKEN;
         if (!apiKey) {
-            return res.status(500).json({ error: 'API key not configured' });
+            console.error('REPLICATE_API_TOKEN not configured');
+            return res.status(500).json({ 
+                error: 'API key not configured',
+                message: 'Please configure REPLICATE_API_TOKEN in Vercel environment variables'
+            });
         }
         
+        // Validate request body
         const { imageData, fileName, contentType } = req.body;
         if (!imageData) {
-            return res.status(400).json({ error: 'Image data required' });
+            return res.status(400).json({ 
+                error: 'Image data required',
+                message: 'Please provide imageData in request body'
+            });
         }
         
-        // Muunna base64 buffer:ksi - EI temp fileja!
+        // Convert base64 to buffer
         const buffer = Buffer.from(imageData, 'base64');
         
-        // Luo multipart/form-data manuaalisesti
+        // Create multipart/form-data manually
         const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);
-        const formData = [];
-        
-        // Lisää tiedosto suoraan bufferista
-        formData.push(
+        const formData = [
             `--${boundary}`,
             `Content-Disposition: form-data; name="file"; filename="${fileName || 'house-facade.jpg'}"`,
             `Content-Type: ${contentType || 'image/jpeg'}`,
             '',
             buffer.toString('binary'),
             `--${boundary}--`
-        );
+        ];
         
         const body = formData.join('\r\n');
         
-        // Lähetä kuva Replicate:lle
+        // Upload to Replicate
         const response = await fetch('https://api.replicate.com/v1/uploads', {
             method: 'POST',
             headers: {
@@ -46,23 +56,33 @@ module.exports = async function handler(req, res) {
         
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('Replicate upload error:', errorText);
+            console.error('Replicate upload error:', {
+                status: response.status,
+                statusText: response.statusText,
+                error: errorText
+            });
             return res.status(response.status).json({
-                error: `Replicate upload failed: ${response.statusText}`
+                error: `Replicate upload failed: ${response.statusText}`,
+                details: errorText
             });
         }
         
         const uploadData = await response.json();
+        
+        // Return success response
         res.status(200).json({
             success: true,
             uploadUrl: uploadData.upload_url,
-            id: uploadData.id
+            id: uploadData.id,
+            message: 'Image uploaded successfully to Replicate'
         });
         
     } catch (error) {
-        console.error('Upload error:', error);
+        console.error('Upload handler error:', error);
         res.status(500).json({
-            error: `Upload failed: ${error.message}`
+            error: 'Internal server error',
+            message: 'Failed to process upload request',
+            details: error.message
         });
     }
 }

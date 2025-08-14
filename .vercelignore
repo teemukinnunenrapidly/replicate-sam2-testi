@@ -1,0 +1,37 @@
+# Development files
+*.log
+server.log
+server.py
+Dockerfile
+docker-compose.yml
+DOCKER.md
+STARTELE.md
+KAINNISTYS.md
+TIEDOSTOT.md
+test-*.sh
+quick-start.sh
+Makefile
+
+# Git
+.git/
+.gitignore
+
+# Node modules (if any)
+node_modules/
+
+# Environment files
+.env
+.env.local
+environment_keys.php
+environment_keys.example.php
+
+# Cache and temporary files
+cache/
+logs/
+uploads/
+*.pyc
+__pycache__/
+
+# Documentation
+*.md
+!README.md
