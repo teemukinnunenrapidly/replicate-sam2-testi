@@ -307,12 +307,6 @@ class ReplicateAPITester {
         this.showProgress(0);
 
         try {
-            this.showStatus('Ladataan kuva Replicate:lle...', 'info');
-            this.showProgress(10);
-            
-            const imageUrl = await this.uploadImageToReplicate();
-            console.log('Kuva ladattu:', imageUrl);
-            
             this.showStatus('Segmentoidaan julkisivu SAM-2:lla...', 'processing');
             this.showProgress(30);
             
@@ -363,64 +357,16 @@ class ReplicateAPITester {
         }
     }
 
-    async uploadImageToReplicate() {
-        if (!this.currentImage) {
-            throw new Error('Ei kuvaa ladattuna');
-        }
-        try {
-            console.log('Starting image upload to Replicate...');
-            console.log('Image details:', {
-                name: this.currentImage.name,
-                size: this.currentImage.size,
-                type: this.currentImage.type
-            });
-            
-            // Muunna kuva base64:ksi
-            const base64Data = await this.fileToBase64(this.currentImage);
-            console.log('Image converted to base64, length:', base64Data.length);
-            
-            // Lähetä kuva Vercel proxy endpointin kautta
-            console.log('Sending request to /api/upload...');
-            const response = await fetch('/api/upload', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    imageData: base64Data,
-                    fileName: this.currentImage.name || 'house-facade.jpg',
-                    contentType: this.currentImage.type || 'image/jpeg'
-                })
-            });
-            
-            console.log('Response status:', response.status);
-            console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-            
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error('Upload failed with status:', response.status, errorData);
-                throw new Error(errorData.error || `Upload failed: ${response.statusText}`);
-            }
-            
-            const result = await response.json();
-            console.log('Upload successful:', result);
-            return result.uploadUrl;
-            
-        } catch (error) {
-            console.error('Upload error:', error);
-            throw new Error(`Kuvan lataus epäonnistui: ${error.message}`);
-        }
-    }
+
     
-    // Apumetodi kuvan muuntamiseen base64:ksi
+    // Apumetodi kuvan muuntamiseen data URL:ksi
     fileToBase64(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onload = () => {
-                // Poista "data:image/jpeg;base64," etuliite
-                const base64 = reader.result.split(',')[1];
-                resolve(base64);
+                // Palauta koko data URL (data:image/jpeg;base64,...)
+                resolve(reader.result);
             };
             reader.onerror = error => reject(error);
         });
