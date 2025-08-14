@@ -429,71 +429,71 @@ class ReplicateAPITester {
     async segmentImage() {
         try {
             console.log('Aloitetaan kuvan segmentointi...');
-            
-            // Tarkista että API key on saatavilla
             if (!this.apiKey) {
                 throw new Error('API key ei ole saatavilla. Tarkista Vercel environment variables.');
             }
             
-            // Hae kuva Replicate:lle ja saa upload URL
-            const imageUrl = await this.uploadImageToReplicate();
-            console.log('Image uploaded to Replicate, URL:', imageUrl);
+            // Käytetään base64 data URL:ia suoraan
+            const imageDataUrl = this.currentImageDataUrl;
+            if (!imageDataUrl) {
+                throw new Error('Kuvaa ei ole ladattu.');
+            }
+
+            console.log('Lähetetään segmentointi kutsu...');
             
-            // SAM-2 segmentointi käyttäen HTTP API:a (väliaikainen)
-            const response = await fetch('https://api.replicate.com/v1/predictions', {
+            // Käytetään uutta Next.js tyylistä endpointtia
+            const response = await fetch('/api/predictions', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Token ${this.apiKey}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    version: this.SAM2_MODEL,
-                    input: {
-                        image: imageUrl,  // Käytä Replicate upload URL:ia
-                        prompt_type: document.getElementById('promptType')?.value || 'text',
-                        points_per_side: parseInt(document.getElementById('pointsPerSide')?.value) || 32,
-                        pred_iou_thresh: parseFloat(document.getElementById('predIouThresh')?.value) || 0.88,
-                        stability_score_thresh: parseFloat(document.getElementById('stabilityScoreThresh')?.value) || 0.95
-                    }
+                    imageData: imageDataUrl,
+                    promptType: document.getElementById('promptType')?.value || 'text',
+                    pointsPerSide: parseInt(document.getElementById('pointsPerSide')?.value) || 32,
+                    predIouThresh: parseFloat(document.getElementById('predIouThresh')?.value) || 0.88,
+                    stabilityScoreThresh: parseFloat(document.getElementById('stabilityScoreThresh')?.value) || 0.95
                 })
             });
-            
+
             if (!response.ok) {
-                throw new Error(`API request failed: ${response.statusText}`);
+                const errorData = await response.json();
+                throw new Error(`Segmentointi kutsu epäonnistui: ${errorData.detail || response.statusText}`);
             }
-            
+
             const prediction = await response.json();
             console.log('SAM-2 prediction created:', prediction);
             
-            // Odota valmistumista
-            return await this.waitForCompletion(prediction.id);
+            // Pollataan prediction statusia
+            return await this.waitForPredictionCompletion(prediction.id);
+            
         } catch (error) {
             console.error('Segmentointi epäonnistui:', error);
             throw new Error(`Segmentointi epäonnistui: ${error.message}`);
         }
     }
 
-    async waitForCompletion(predictionId) {
+    async waitForPredictionCompletion(predictionId) {
         console.log(`Waiting for prediction ${predictionId} to complete...`);
         let attempts = 0;
         const maxAttempts = 100; // Max 100 attempts
         const interval = 5000; // 5 seconds
 
         while (attempts < maxAttempts) {
-            const response = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
+            const response = await fetch(`/api/predictions/${predictionId}`, {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Token ${this.apiKey}`
+                    'Content-Type': 'application/json'
                 }
             });
-
+            
             if (!response.ok) {
                 throw new Error(`Prediction status check failed: ${response.statusText}`);
             }
-
+            
             const prediction = await response.json();
             console.log(`Prediction status: ${prediction.status}, attempts: ${attempts + 1}`);
-
+            
             if (prediction.status === 'succeeded') {
                 console.log('Prediction succeeded:', prediction);
                 return prediction;
@@ -504,9 +504,11 @@ class ReplicateAPITester {
                 console.error('Prediction canceled:', prediction);
                 throw new Error('Prediction was canceled.');
             }
+            
             attempts++;
             await this.delay(interval);
         }
+        
         throw new Error(`Prediction ${predictionId} did not complete within ${maxAttempts * interval / 1000} seconds.`);
     }
 

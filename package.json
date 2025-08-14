@@ -1,29 +1,21 @@
 {
-  "name": "replicate-testi",
+  "name": "replicate-sam2-testi",
   "version": "1.0.0",
-  "description": "Vercel-deployed test environment for Replicate SAM-2 integration",
+  "description": "Test application for Replicate SAM-2 model",
   "main": "index.html",
   "scripts": {
-    "dev": "echo 'Development server not needed for Vercel'",
-    "build": "echo 'Build completed'",
-    "vercel-build": "echo 'Vercel build completed'"
+    "build": "echo 'No build step needed for static site'",
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
   },
-  "keywords": [
-    "replicate",
-    "sam-2",
-    "ai",
-    "image-segmentation",
-    "vercel"
-  ],
-  "author": "Teemu Kinnunen",
-  "license": "MIT",
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "replicate": "^1.0.1"
+    "replicate": "^0.25.2"
   },
-  "devDependencies": {
-    "@types/node": "^18.0.0"
-  }
+  "devDependencies": {},
+  "keywords": ["replicate", "sam2", "ai", "image-segmentation"],
+  "author": "Teemu Kinnunen",
+  "license": "MIT"
 }

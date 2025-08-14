@@ -12,6 +12,12 @@
     "api/upload-test.js": {
       "maxDuration": 10
     },
+    "api/predictions/route.js": {
+      "maxDuration": 30
+    },
+    "api/predictions/[id]/route.js": {
+      "maxDuration": 10
+    },
     "api/get-api-key.js": {
       "maxDuration": 10
     },
