@@ -1,9 +1,15 @@
+// Lisää Replicate client library
+import Replicate from "replicate";
+
 class ReplicateAPITester {
     constructor() {
         this.apiKey = '';
         this.currentImage = null;
         this.segmentationResult = null;
         this.paintingResult = null;
+        
+        // Alusta Replicate client
+        this.replicate = null;
         
         // Mallin versiot - Replicate API vaatii tarkan version hashin
         this.SAM2_MODEL = 'meta/sam-2:2c7b381af7ba6b0f71744066c4aba9c6f3b95f02d7bb110d7a0f0b1aaec12329';
@@ -174,25 +180,22 @@ class ReplicateAPITester {
             const response = await fetch('/api/get-api-key');
             if (response.ok) {
                 const data = await response.json();
-                if (data.apiKey) {
-                    this.apiKey = data.apiKey;
-                    console.log('API key haettu Vercel endpointista');
-                    return;
-                }
+                this.apiKey = data.apiKey;
+                
+                // Alusta Replicate client API keyllä
+                this.replicate = new Replicate({ auth: this.apiKey });
+                
+                console.log('API key haettu Vercel endpointista');
+                console.log('API Key status:', {
+                    apiKeyLength: this.apiKey ? this.apiKey.length : 0,
+                    apiKeyStart: this.apiKey ? this.apiKey.substring(0, 10) + '...' : 'none',
+                    replicateClient: this.replicate ? 'Initialized' : 'Not initialized'
+                });
+            } else {
+                throw new Error(`API key fetch failed: ${response.status}`);
             }
         } catch (error) {
-            console.log('Vercel API endpoint ei toimi:', error);
-        }
-        
-        // Jos Vercel endpoint ei toimi, käytä localStorage (kehitysympäristö)
-        const savedKey = localStorage.getItem('replicate_api_key');
-        
-        if (savedKey) {
-            this.apiKey = savedKey;
-            console.log('API key haettu localStorage:sta');
-        } else {
-            // Ei API key:tä saatavilla - näytä virheviesti
-            console.error('API key ei ole saatavilla! Tarkista Vercel environment variables.');
+            console.error('API key loading error:', error);
             this.showAPIKeyError();
         }
     }
@@ -427,35 +430,33 @@ class ReplicateAPITester {
         try {
             console.log('Aloitetaan kuvan segmentointi...');
             
+            // Tarkista että Replicate client on alustettu
+            if (!this.replicate) {
+                throw new Error('Replicate client ei ole alustettu. Tarkista API key.');
+            }
+            
             // Hae kuva Replicate:lle ja saa upload URL
             const imageUrl = await this.uploadImageToReplicate();
             console.log('Image uploaded to Replicate, URL:', imageUrl);
             
-            // SAM-2 segmentointi
-            const response = await fetch('https://api.replicate.com/v1/predictions', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Token ${this.apiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    version: this.SAM2_MODEL,
-                    input: {
-                        image: imageUrl,  // Käytä Replicate upload URL:ia
-                        prompt_type: document.getElementById('promptType').value || 'text',
-                        points_per_side: parseInt(document.getElementById('pointsPerSide').value) || 32,
-                        pred_iou_thresh: parseFloat(document.getElementById('predIouThresh').value) || 0.88,
-                        stability_score_thresh: parseFloat(document.getElementById('stabilityScoreThresh').value) || 0.95
-                    }
-                })
+            // SAM-2 segmentointi käyttäen Replicate client librarya
+            const output = await this.replicate.run(this.SAM2_MODEL, {
+                input: {
+                    image: imageUrl,  // Käytä Replicate upload URL:ia
+                    prompt_type: document.getElementById('promptType')?.value || 'text',
+                    points_per_side: parseInt(document.getElementById('pointsPerSide')?.value) || 32,
+                    pred_iou_thresh: parseFloat(document.getElementById('predIouThresh')?.value) || 0.88,
+                    stability_score_thresh: parseFloat(document.getElementById('stabilityScoreThresh')?.value) || 0.95
+                }
             });
-
-            if (!response.ok) {
-                throw new Error(`API request failed: ${response.statusText}`);
-            }
-
-            const prediction = await response.json();
-            return await this.waitForCompletion(prediction.id);
+            
+            console.log('SAM-2 segmentointi valmis:', output);
+            
+            // Palauta tulos samassa formaatissa kuin ennen
+            return {
+                output: output,
+                status: 'succeeded'
+            };
         } catch (error) {
             console.error('Segmentointi epäonnistui:', error);
             throw new Error(`Segmentointi epäonnistui: ${error.message}`);
@@ -518,60 +519,22 @@ class ReplicateAPITester {
             
             console.log('Maalaus input:', inputData);
             
-            // Luo prediction
-            const prediction = await this.createPrediction(model.version, inputData);
+            // Luo prediction käyttäen Replicate client librarya
+            const output = await this.replicate.run(model.version, {
+                input: inputData
+            });
             
-            // Odota valmistumista
-            return await this.waitForCompletion(prediction.id);
+            console.log('Maalaus valmis:', output);
+            
+            // Palauta tulos samassa formaatissa kuin ennen
+            return {
+                output: output,
+                status: 'succeeded'
+            };
             
         } catch (error) {
             console.error('Maalaus epäonnistui:', error);
             throw new Error(`Maalaus epäonnistui: ${error.message}`);
-        }
-    }
-
-    async createPrediction(modelVersion, inputData) {
-        const response = await fetch('https://api.replicate.com/v1/predictions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Token ${this.apiKey}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                version: modelVersion,
-                input: inputData
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`API request failed: ${response.statusText}`);
-        }
-
-        return await response.json();
-    }
-
-    async waitForCompletion(predictionId) {
-        while (true) {
-            const response = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
-                headers: {
-                    'Authorization': `Token ${this.apiKey}`,
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`Status check failed: ${response.statusText}`);
-            }
-
-            const prediction = await response.json();
-
-            if (prediction.status === 'succeeded') {
-                return prediction;
-            } else if (prediction.status === 'failed') {
-                throw new Error(`Prediction failed: ${prediction.error || 'Unknown error'}`);
-            }
-
-            // Odota 2 sekuntia ennen seuraavaa tarkistusta
-            await this.delay(2000);
         }
     }
 
