@@ -311,12 +311,20 @@ class ReplicateAPITester {
         if (!this.currentImage) {
             throw new Error('Ei kuvaa ladattuna');
         }
-
         try {
+            console.log('Starting image upload to Replicate...');
+            console.log('Image details:', {
+                name: this.currentImage.name,
+                size: this.currentImage.size,
+                type: this.currentImage.type
+            });
+            
             // Muunna kuva base64:ksi
             const base64Data = await this.fileToBase64(this.currentImage);
+            console.log('Image converted to base64, length:', base64Data.length);
             
             // Lähetä kuva Vercel proxy endpointin kautta
+            console.log('Sending request to /api/up...');
             const response = await fetch('/api/up', {
                 method: 'POST',
                 headers: {
@@ -329,12 +337,17 @@ class ReplicateAPITester {
                 })
             });
             
+            console.log('Response status:', response.status);
+            console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+            
             if (!response.ok) {
                 const errorData = await response.json();
+                console.error('Upload failed with status:', response.status, errorData);
                 throw new Error(errorData.error || `Upload failed: ${response.statusText}`);
             }
             
             const result = await response.json();
+            console.log('Upload successful:', result);
             return result.uploadUrl;
             
         } catch (error) {
