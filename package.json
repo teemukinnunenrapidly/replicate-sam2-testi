@@ -1,0 +1,31 @@
+{
+  "name": "replicate-testi",
+  "version": "1.0.0",
+  "description": "Paikallinen testiympäristö replicate-testiä varten",
+  "main": "server.py",
+  "scripts": {
+    "start": "python3 server.py",
+    "start-bg": "python3 server.py > server.log 2>&1 &",
+    "stop": "pkill -f 'python3 server.py' || echo 'Ei käynnissä olevia palvelimia'",
+    "status": "lsof -i :8001 >/dev/null 2>&1 && echo '🟢 Palvelin on käynnissä' || echo '🔴 Palvelin ei ole käynnissä'",
+    "open": "open http://localhost:8001",
+    "dev": "python3 server.py",
+    "test": "curl -I http://localhost:8001",
+    "clean": "rm -f *.pyc __pycache__/* server.log 2>/dev/null || true"
+  },
+  "keywords": [
+    "test",
+    "local",
+    "development",
+    "replicate"
+  ],
+  "author": "Teemu Kinnunen",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "."
+  }
+}
