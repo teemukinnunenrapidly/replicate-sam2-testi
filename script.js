@@ -160,6 +160,15 @@ class ReplicateAPITester {
         }
     }
 
+    // Lisätään debug-metodi API key:n tarkistamiseen
+    debugAPIKey() {
+        console.log('API Key status:', {
+            hasApiKey: !!this.apiKey,
+            apiKeyLength: this.apiKey ? this.apiKey.length : 0,
+            apiKeyStart: this.apiKey ? this.apiKey.substring(0, 10) + '...' : 'none'
+        });
+    }
+
     promptAPIKey() {
         // Vercelissä ei tarvitse promptata, environment variable hoitaa
         if (typeof process !== 'undefined' && process.env && process.env.REPLICATE_API_TOKEN) {
@@ -222,6 +231,9 @@ class ReplicateAPITester {
     }
 
     async generateImage() {
+        // Debug: tarkista API key status
+        this.debugAPIKey();
+        
         if (!this.currentImage) {
             alert('Lataa ensin kuva!');
             return;
