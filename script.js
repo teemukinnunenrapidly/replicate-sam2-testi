@@ -40,83 +40,79 @@ class ReplicateAPITester {
     }
 
     initializeEventListeners() {
-        // Kuva upload
-        const imageInput = document.getElementById('imageInput');
+        // Tarkista että elementit ovat olemassa ennen käsittelyä
         const uploadSection = document.getElementById('uploadSection');
-        
-        imageInput.addEventListener('change', (e) => this.handleImageUpload(e));
-        
-        // Drag & drop
-        uploadSection.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadSection.classList.add('dragover');
-        });
-        
-        uploadSection.addEventListener('dragleave', () => {
-            uploadSection.classList.remove('dragover');
-        });
-        
-        uploadSection.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadSection.classList.remove('dragover');
-            this.handleFileDrop(e);
-        });
+        if (uploadSection) {
+            // Drag and drop toiminnallisuus
+            uploadSection.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadSection.classList.add('dragover');
+            });
 
-        // Strength slider
+            uploadSection.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                uploadSection.classList.remove('dragover');
+            });
+
+            uploadSection.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadSection.classList.remove('dragover');
+                this.handleFileDrop(e);
+            });
+        }
+
+        // Tarkista että elementit ovat olemassa ennen event listenerien lisäämistä
         const strengthSlider = document.getElementById('strength');
         const strengthValue = document.getElementById('strengthValue');
-        
-        strengthSlider.addEventListener('input', (e) => {
-            strengthValue.textContent = e.target.value;
-        });
+        if (strengthSlider && strengthValue) {
+            strengthSlider.addEventListener('input', (e) => {
+                strengthValue.textContent = e.target.value;
+            });
+        }
 
-        // Guidance scale slider
         const guidanceSlider = document.getElementById('guidanceScale');
         const guidanceValue = document.getElementById('guidanceScaleValue');
-        
-        guidanceSlider.addEventListener('input', (e) => {
-            guidanceValue.textContent = e.target.value;
-        });
+        if (guidanceSlider && guidanceValue) {
+            guidanceSlider.addEventListener('input', (e) => {
+                guidanceValue.textContent = e.target.value;
+            });
+        }
 
-        // Points per side slider
         const pointsSlider = document.getElementById('pointsPerSide');
         const pointsValue = document.getElementById('pointsPerSideValue');
-        
-        pointsSlider.addEventListener('input', (e) => {
-            pointsValue.textContent = e.target.value;
-        });
+        if (pointsSlider && pointsValue) {
+            pointsSlider.addEventListener('input', (e) => {
+                pointsValue.textContent = e.target.value;
+            });
+        }
 
-        // IoU threshold slider
         const iouSlider = document.getElementById('predIouThresh');
         const iouValue = document.getElementById('predIouThreshValue');
-        
-        iouSlider.addEventListener('input', (e) => {
-            iouValue.textContent = parseFloat(e.target.value).toFixed(2);
-        });
+        if (iouSlider && iouValue) {
+            iouSlider.addEventListener('input', (e) => {
+                iouValue.textContent = parseFloat(e.target.value).toFixed(2);
+            });
+        }
 
-        // Stability score threshold slider
         const stabilitySlider = document.getElementById('stabilityScoreThresh');
         const stabilityValue = document.getElementById('stabilityScoreThreshValue');
-        
-        stabilitySlider.addEventListener('input', (e) => {
-            stabilityValue.textContent = parseFloat(e.target.value).toFixed(2);
-        });
+        if (stabilitySlider && stabilityValue) {
+            stabilitySlider.addEventListener('input', (e) => {
+                stabilityValue.textContent = parseFloat(e.target.value).toFixed(2);
+            });
+        }
 
-        // ControlNet strength slider
         const controlnetStrengthSlider = document.getElementById('controlnetStrength');
         const controlnetStrengthValue = document.getElementById('controlnetStrengthValue');
-        
-        if (controlnetStrengthSlider) {
+        if (controlnetStrengthSlider && controlnetStrengthValue) {
             controlnetStrengthSlider.addEventListener('input', (e) => {
                 controlnetStrengthValue.textContent = parseFloat(e.target.value).toFixed(1);
             });
         }
 
-        // Realistic strength slider
         const realisticStrengthSlider = document.getElementById('realisticStrength');
         const realisticStrengthValue = document.getElementById('realisticStrengthValue');
-        
-        if (realisticStrengthSlider) {
+        if (realisticStrengthSlider && realisticStrengthValue) {
             realisticStrengthSlider.addEventListener('input', (e) => {
                 realisticStrengthValue.textContent = parseFloat(e.target.value).toFixed(1);
             });
@@ -124,31 +120,45 @@ class ReplicateAPITester {
 
         // Generoi-nappi
         const generateBtn = document.getElementById('generateBtn');
-        generateBtn.addEventListener('click', () => this.generateImage());
+        if (generateBtn) {
+            generateBtn.addEventListener('click', () => this.generateImage());
+        }
 
         // Mallin valinta
         const paintingModel = document.getElementById('paintingModel');
-        paintingModel.addEventListener('change', () => this.showModelParams());
+        if (paintingModel) {
+            paintingModel.addEventListener('change', () => this.showModelParams());
+        }
         
         // Prosessin tyyppi
         const processType = document.getElementById('processType');
-        processType.addEventListener('change', () => this.updateProcessType());
+        if (processType) {
+            processType.addEventListener('change', () => this.updateProcessType());
+        }
         
-        // Näytä oletusmallin parametrit
-        this.showModelParams();
-        this.updateProcessType();
+        // Näytä oletusmallin parametrit vain jos elementit ovat olemassa
+        if (paintingModel) {
+            this.showModelParams();
+        }
+        if (processType) {
+            this.updateProcessType();
+        }
     }
 
     updateProcessType() {
-        const processType = document.getElementById('processType').value;
+        const processType = document.getElementById('processType');
         const generateBtn = document.getElementById('generateBtn');
         
-        if (processType === 'segmentation_only') {
-            generateBtn.textContent = '🚀 Generoi segmentointi ($0.025)';
-            generateBtn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
-        } else {
-            generateBtn.textContent = '🚀 Generoi muokattu kuva';
-            generateBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+        if (processType && generateBtn) {
+            const processTypeValue = processType.value;
+            
+            if (processTypeValue === 'segmentation_only') {
+                generateBtn.textContent = '🚀 Generoi segmentointi ($0.025)';
+                generateBtn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+            } else {
+                generateBtn.textContent = '🚀 Generoi muokattu kuva';
+                generateBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            }
         }
     }
 
@@ -241,11 +251,15 @@ class ReplicateAPITester {
 
     showImagePreview(dataUrl) {
         const previewImage = document.getElementById('previewImage');
-        previewImage.src = dataUrl;
-        previewImage.style.display = 'block';
+        if (previewImage) {
+            previewImage.src = dataUrl;
+            previewImage.style.display = 'block';
+        }
         
         const originalResult = document.getElementById('originalResult');
-        originalResult.src = dataUrl;
+        if (originalResult) {
+            originalResult.src = dataUrl;
+        }
     }
 
     async generateImage() {
@@ -262,8 +276,16 @@ class ReplicateAPITester {
             return;
         }
 
-        const processType = document.getElementById('processType').value;
-        const isSegmentationOnly = processType === 'segmentation_only';
+        const processType = document.getElementById('processType');
+        const isSegmentationOnly = processType && processType.value === 'segmentation_only';
+
+        if (processType) {
+            if (isSegmentationOnly) {
+                processType.value = 'segmentation_only'; // Ensure it's set to segmentation_only
+            } else {
+                processType.value = 'painting'; // Ensure it's set to painting
+            }
+        }
 
         this.showStatus('Valmistellaan prosessia...', 'info');
         this.showProgress(0);
@@ -436,7 +458,13 @@ class ReplicateAPITester {
             console.log('Image uploaded to Replicate, URL:', imageUrl);
             
             // Valitse malli ja parametrit
-            const modelId = document.getElementById('paintingModel').value; // Get the selected model from the UI
+            const paintingModel = document.getElementById('paintingModel');
+            const modelId = paintingModel ? paintingModel.value : null; // Get the selected model from the UI
+            
+            if (!modelId) {
+                throw new Error('Ei mallia valittu.');
+            }
+
             const model = this.MODELS[modelId];
             
             if (!model) {
@@ -455,13 +483,24 @@ class ReplicateAPITester {
             
             // Lisää mallikohtaiset parametrit
             if (modelId === 'sdxl') {
-                inputData.scheduler = document.getElementById('scheduler').value; // Get scheduler from UI
-                inputData.refine = document.getElementById('refineType').value; // Get refine type from UI
+                const scheduler = document.getElementById('scheduler');
+                const refineType = document.getElementById('refineType');
+                if (scheduler && refineType) {
+                    inputData.scheduler = scheduler.value; // Get scheduler from UI
+                    inputData.refine = refineType.value; // Get refine type from UI
+                }
             } else if (modelId === 'controlnet') {
-                inputData.control_type = document.getElementById('controlnetType').value; // Get controlnet type from UI
-                inputData.control_strength = parseFloat(document.getElementById('controlnetStrength').value); // Get controlnet strength from UI
+                const controlnetType = document.getElementById('controlnetType');
+                const controlnetStrength = document.getElementById('controlnetStrength');
+                if (controlnetType && controlnetStrength) {
+                    inputData.control_type = controlnetType.value; // Get controlnet type from UI
+                    inputData.control_strength = parseFloat(controlnetStrength.value); // Get controlnet strength from UI
+                }
             } else if (modelId === 'realistic') {
-                inputData.realism_strength = parseFloat(document.getElementById('realisticStrength').value); // Get realistic strength from UI
+                const realisticStrength = document.getElementById('realisticStrength');
+                if (realisticStrength) {
+                    inputData.realism_strength = parseFloat(realisticStrength.value); // Get realistic strength from UI
+                }
             }
             
             console.log('Maalaus input:', inputData);
@@ -527,38 +566,46 @@ class ReplicateAPITester {
         const statusContainer = document.getElementById('statusContainer');
         const statusMessage = document.getElementById('statusMessage');
         
-        statusContainer.style.display = 'block';
-        statusMessage.textContent = message;
-        statusMessage.className = `status ${type}`;
+        if (statusContainer && statusMessage) {
+            statusContainer.style.display = 'block';
+            statusMessage.textContent = message;
+            statusMessage.className = `status ${type}`;
+        }
     }
 
     showProgress(percentage) {
         const progressFill = document.getElementById('progressFill');
-        progressFill.style.width = `${percentage}%`;
+        if (progressFill) {
+            progressFill.style.width = `${percentage}%`;
+        }
     }
 
     showResults() {
         const resultsSection = document.getElementById('resultsSection');
         const processedResult = document.getElementById('processedResult');
         
-        if (this.paintingResult && this.paintingResult.output) {
-            // Näytä oikea muokattu kuva
-            if (Array.isArray(this.paintingResult.output)) {
-                processedResult.src = this.paintingResult.output[0]; // Ensimmäinen tulos
+        if (resultsSection && processedResult) {
+            if (this.paintingResult && this.paintingResult.output) {
+                // Näytä oikea muokattu kuva
+                if (Array.isArray(this.paintingResult.output)) {
+                    processedResult.src = this.paintingResult.output[0]; // Ensimmäinen tulos
+                } else {
+                    processedResult.src = this.paintingResult.output;
+                }
             } else {
-                processedResult.src = this.paintingResult.output;
+                // Fallback jos ei ole tulosta
+                processedResult.src = 'https://via.placeholder.com/400x300/ffc107/000000?text=Prosessi+kesken';
             }
-        } else {
-            // Fallback jos ei ole tulosta
-            processedResult.src = 'https://via.placeholder.com/400x300/ffc107/000000?text=Prosessi+kesken';
+            
+            resultsSection.style.display = 'grid';
         }
-        
-        resultsSection.style.display = 'grid';
     }
 
     showCostInfo() {
         const costInfo = document.getElementById('costInfo');
-        costInfo.style.display = 'block';
+        if (costInfo) {
+            costInfo.style.display = 'block';
+        }
     }
 
     delay(ms) {
@@ -566,7 +613,7 @@ class ReplicateAPITester {
     }
 
     showModelParams() {
-        const selectedModel = document.getElementById('paintingModel').value;
+        const paintingModel = document.getElementById('paintingModel');
         
         // Piilota kaikki mallikohtaiset parametrit
         document.querySelectorAll('.model-params').forEach(el => {
@@ -574,19 +621,32 @@ class ReplicateAPITester {
         });
         
         // Näytä valitun mallin parametrit
-        if (selectedModel === 'sdxl') {
-            document.getElementById('sdxlParams').style.display = 'block';
-        } else if (selectedModel === 'controlnet') {
-            document.getElementById('controlnetParams').style.display = 'block';
-        } else if (selectedModel === 'realistic') {
-            document.getElementById('realisticParams').style.display = 'block';
+        if (paintingModel) {
+            const selectedModel = paintingModel.value;
+            if (selectedModel === 'sdxl') {
+                const sdxlParams = document.getElementById('sdxlParams');
+                if (sdxlParams) {
+                    sdxlParams.style.display = 'block';
+                }
+            } else if (selectedModel === 'controlnet') {
+                const controlnetParams = document.getElementById('controlnetParams');
+                if (controlnetParams) {
+                    controlnetParams.style.display = 'block';
+                }
+            } else if (selectedModel === 'realistic') {
+                const realisticParams = document.getElementById('realisticParams');
+                if (realisticParams) {
+                    realisticParams.style.display = 'block';
+                }
+            }
         }
         
         // Päivitä kustannustiedot
-        this.updateCostInfo(selectedModel);
+        this.updateCostInfo();
     }
 
-    updateCostInfo(selectedModel) {
+    updateCostInfo() {
+        const paintingModel = document.getElementById('paintingModel');
         const costs = {
             sdxl: { segmentation: 0.025, painting: 0.05, total: 0.075 },
             controlnet: { segmentation: 0.025, painting: 0.06, total: 0.085 },
@@ -603,17 +663,20 @@ class ReplicateAPITester {
             dreamshaper: 'Taiteellinen tyyli. Luova ja uniikki ulkoasu.'
         };
         
-        const cost = costs[selectedModel];
-        const description = descriptions[selectedModel];
-        
-        if (cost) {
-            document.getElementById('segmentationCost').textContent = `~$${cost.segmentation}`;
-            document.getElementById('paintingCost').textContent = `~$${cost.painting}`;
-            document.getElementById('totalCost').innerHTML = `<strong>~$${cost.total}</strong>`;
-        }
-        
-        if (description) {
-            document.getElementById('modelDescription').innerHTML = `<small>${description}</small>`;
+        if (paintingModel) {
+            const selectedModel = paintingModel.value;
+            const cost = costs[selectedModel];
+            const description = descriptions[selectedModel];
+            
+            const segmentationCost = document.getElementById('segmentationCost');
+            const paintingCost = document.getElementById('paintingCost');
+            const totalCost = document.getElementById('totalCost');
+            const modelDescription = document.getElementById('modelDescription');
+
+            if (segmentationCost) segmentationCost.textContent = `~$${cost.segmentation}`;
+            if (paintingCost) paintingCost.textContent = `~$${cost.painting}`;
+            if (totalCost) totalCost.innerHTML = `<strong>~$${cost.total}</strong>`;
+            if (modelDescription) modelDescription.innerHTML = `<small>${description}</small>`;
         }
     }
 
@@ -627,33 +690,50 @@ class ReplicateAPITester {
         const confidenceScore = document.getElementById('confidenceScore');
 
         // Näytä segmentointitulokset
-        segmentationResultsSection.style.display = 'block';
+        if (segmentationResultsSection) {
+            segmentationResultsSection.style.display = 'block';
+        }
         
         // Piilota maalauksen tulokset
-        document.getElementById('resultsSection').style.display = 'none';
+        const resultsSection = document.getElementById('resultsSection');
+        if (resultsSection) {
+            resultsSection.style.display = 'none';
+        }
 
         // Näytä alkuperäinen kuva
         if (this.currentImage) {
-            originalImage.src = this.currentImage;
+            const originalImageElement = document.getElementById('originalImage');
+            if (originalImageElement) {
+                originalImageElement.src = this.currentImage;
+            }
         }
 
         // Näytä segmentointitulokset
         if (this.segmentationResult && this.segmentationResult.output) {
-            if (Array.isArray(this.segmentationResult.output)) {
-                segmentationResultImage.src = this.segmentationResult.output[0];
-                segmentCount.textContent = this.segmentationResult.output.length;
-            } else {
-                segmentationResultImage.src = this.segmentationResult.output;
-                segmentCount.textContent = '1';
+            if (segmentationResultImage) {
+                if (Array.isArray(this.segmentationResult.output)) {
+                    segmentationResultImage.src = this.segmentationResult.output[0];
+                    segmentCount.textContent = this.segmentationResult.output.length;
+                } else {
+                    segmentationResultImage.src = this.segmentationResult.output;
+                    segmentCount.textContent = '1';
+                }
             }
             
             // Näytä käytetty prompt
-            const promptText = document.getElementById('segmentationPrompt').value;
-            segmentationPrompt.textContent = `Prompt: ${promptText}`;
+            const segmentationPromptElement = document.getElementById('segmentationPrompt');
+            if (segmentationPromptElement) {
+                const promptText = segmentationPromptElement.value;
+                segmentationPromptElement.textContent = `Prompt: ${promptText}`;
+            }
             
             // Näytä prompt-tyyppi
-            const promptType = document.getElementById('promptType').value;
-            promptTypeValue.textContent = promptType;
+            const promptType = document.getElementById('promptType');
+            const promptTypeValueElement = document.getElementById('promptTypeValue');
+            if (promptType && promptTypeValueElement) {
+                const promptTypeValue = promptType.value;
+                promptTypeValueElement.textContent = promptTypeValue;
+            }
             
             // Näytä luottamuspisteet jos saatavilla
             if (this.segmentationResult.scores && this.segmentationResult.scores.length > 0) {
@@ -663,10 +743,18 @@ class ReplicateAPITester {
                 confidenceScore.textContent = 'Ei saatavilla';
             }
         } else {
-            segmentationResultImage.src = 'https://via.placeholder.com/400x300/ffc107/000000?text=Segmentointi+epäonnistui';
-            segmentationPrompt.textContent = 'Segmentointi ei onnistunut tai tuloksia ei ole.';
-            segmentCount.textContent = '0';
-            confidenceScore.textContent = '0%';
+            if (segmentationResultImage) {
+                segmentationResultImage.src = 'https://via.placeholder.com/400x300/ffc107/000000?text=Segmentointi+epäonnistui';
+            }
+            if (segmentationPrompt) {
+                segmentationPrompt.textContent = 'Segmentointi ei onnistunut tai tuloksia ei ole.';
+            }
+            if (segmentCount) {
+                segmentCount.textContent = '0';
+            }
+            if (confidenceScore) {
+                confidenceScore.textContent = '0%';
+            }
         }
     }
 }
