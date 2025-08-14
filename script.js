@@ -133,18 +133,19 @@ class ReplicateAPITester {
     }
 
     async loadAPIKey() {
+        // Yritetään ensin hakea API key Vercel environment variableista
         try {
-            // Yritetään hakea API key Vercel environment variableista
             const response = await fetch('/api/get-api-key');
             if (response.ok) {
                 const data = await response.json();
                 if (data.apiKey) {
                     this.apiKey = data.apiKey;
+                    console.log('API key haettu Vercel endpointista');
                     return;
                 }
             }
         } catch (error) {
-            console.log('Ei Vercel API endpointia, käytetään localStorage');
+            console.log('Vercel API endpoint ei toimi:', error);
         }
         
         // Jos ei Vercel endpointia, käytetään localStorage (kehitysympäristö)
@@ -152,7 +153,9 @@ class ReplicateAPITester {
         
         if (savedKey) {
             this.apiKey = savedKey;
+            console.log('API key haettu localStorage:sta');
         } else {
+            console.log('Ei API key:tä, kysytään käyttäjältä');
             this.promptAPIKey();
         }
     }
