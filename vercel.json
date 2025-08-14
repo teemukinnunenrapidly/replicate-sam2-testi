@@ -9,6 +9,9 @@
     "api/upload-simple.js": {
       "maxDuration": 10
     },
+    "api/upload-test.js": {
+      "maxDuration": 10
+    },
     "api/get-api-key.js": {
       "maxDuration": 10
     },
