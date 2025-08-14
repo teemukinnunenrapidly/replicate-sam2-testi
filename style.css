@@ -478,6 +478,36 @@ body {
     line-height: 1.4;
 }
 
+/* API Test Section */
+.api-test-section {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.api-test-section h3 {
+    margin-top: 0;
+    color: #495057;
+}
+
+.success {
+    background: #d4edda;
+    color: #155724;
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
+.error {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
 @media (max-width: 768px) {
     .controls-section,
     .results-section {
