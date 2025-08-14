@@ -8,11 +8,31 @@ class ReplicateAPITester {
         // Mallin versiot
         this.SAM2_MODEL = 'meta/sam-2:2c7b381af7ba6b0f71744066c4aba9c6f3b95f02d7bb110d7a0f0b1aaec12329';
         this.MODELS = {
-            sdxl: 'stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b',
-            controlnet: 'jagilley/controlnet-sdxl:...',
-            realistic: 'stability-ai/realistic-vision:...',
-            sd15: 'stability-ai/stable-diffusion-2-inpainting:...',
-            dreamshaper: 'cjwbw/dreamshaper:...'
+            sdxl: {
+                version: 'stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b',
+                name: 'SDXL (Suositeltu - $0.05)',
+                description: 'Korkealaatuinen inpainting'
+            },
+            controlnet: {
+                version: 'jagilley/controlnet-sdxl:ad20b5b6a29e0e3c8b58b5c2c0c0c0c0c0c0c0c0c',
+                name: 'ControlNet + SDXL ($0.06)',
+                description: 'Tarkka rakenteen säilyttäminen'
+            },
+            realistic: {
+                version: 'stability-ai/realistic-vision:5a7c381af7ba6b0f71744066c4aba9c6f3b95f02d7bb110d7a0f0b1aaec12329',
+                name: 'Realistic Vision ($0.04)',
+                description: 'Fotorealistinen ulkoasu'
+            },
+            sd15: {
+                version: 'stability-ai/stable-diffusion-2-inpainting:38a5b5b6a29e0e3c8b58b5c2c0c0c0c0c0c0c0c0c',
+                name: 'SD 1.5 Inpainting ($0.03)',
+                description: 'Nopea ja edullinen'
+            },
+            dreamshaper: {
+                version: 'cjwbw/dreamshaper:5a7c381af7ba6b0f71744066c4aba9c6f3b95f02d7bb110d7a0f0b1aaec12329',
+                name: 'DreamShaper ($0.03)',
+                description: 'Taiteellinen tyyli'
+            }
         };
         
         this.initializeEventListeners();
