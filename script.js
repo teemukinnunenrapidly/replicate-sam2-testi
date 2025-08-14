@@ -313,33 +313,46 @@ class ReplicateAPITester {
         }
 
         try {
-            // Muunna kuva base64:stä blob:ksi
-            const response = await fetch(this.currentImage);
-            const blob = await response.blob();
+            // Muunna kuva base64:ksi
+            const base64Data = await this.fileToBase64(this.currentImage);
             
-            // Lataa kuva Replicate:n storageen
-            const formData = new FormData();
-            formData.append('file', blob, this.currentImage.name || 'image.jpg');
-            
-            const uploadResponse = await fetch('https://api.replicate.com/v1/uploads', {
+            // Lähetä kuva Vercel proxy endpointin kautta
+            const response = await fetch('/api/upload-image', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Token ${this.apiKey}`,
+                    'Content-Type': 'application/json'
                 },
-                body: formData
+                body: JSON.stringify({
+                    imageData: base64Data
+                })
             });
-
-            if (!uploadResponse.ok) {
-                throw new Error(`Upload failed: ${uploadResponse.statusText}`);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Upload failed: ${response.statusText}`);
             }
-
-            const uploadResult = await uploadResponse.json();
-            return uploadResult.url; // Replicate:n URL kuvalle
+            
+            const result = await response.json();
+            return result.uploadUrl;
             
         } catch (error) {
             console.error('Upload error:', error);
             throw new Error(`Kuvan lataus epäonnistui: ${error.message}`);
         }
+    }
+
+    // Apumetodi kuvan muuntamiseen base64:ksi
+    fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => {
+                // Poista "data:image/jpeg;base64," etuliite
+                const base64 = reader.result.split(',')[1];
+                resolve(base64);
+            };
+            reader.onerror = error => reject(error);
+        });
     }
 
     async segmentImage(imageUrl) {
