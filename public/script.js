@@ -393,9 +393,15 @@ class ReplicateAPITester {
                 const finnishPrompt = document.getElementById('promptType')?.value || 'text';
                 const englishPrompt = this.translatePromptToEnglish(finnishPrompt);
                 
+                // SAM-2 prompt handling - käytä point promptia tarkempaan segmentointiin
+                let promptType = 'text';
+                if (englishPrompt === 'facade' || englishPrompt === 'wall' || englishPrompt === 'window' || englishPrompt === 'door') {
+                    promptType = 'point'; // Tarkempi segmentointi
+                }
+                
                 const body = JSON.stringify({
                     imageData: imageDataUrl,
-                    promptType: englishPrompt,
+                    promptType: promptType,
                     pointsPerSide: parseInt(document.getElementById('pointsPerSide')?.value) || 32,
                     predIouThresh: parseFloat(document.getElementById('predIouThresh')?.value) || 0.88,
                     stabilityScoreThresh: parseFloat(document.getElementById('stabilityScoreThresh')?.value) || 0.95
@@ -570,7 +576,14 @@ class ReplicateAPITester {
             'teksti': 'text',
             'piste': 'point',
             'laatikko': 'box',
-            'naamio': 'mask'
+            'naamio': 'mask',
+            'julkisivu': 'facade',
+            'seinä': 'wall',
+            'ikkuna': 'window',
+            'ovi': 'door',
+            'katto': 'roof',
+            'terassi': 'deck',
+            'piha': 'yard'
         };
         
         // Jos prompt on suomenkielinen, käytä käännöstä

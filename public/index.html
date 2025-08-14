@@ -37,16 +37,16 @@
                 <label for="promptType">Prompt Tyyppi:</label>
                 <select id="promptType">
                     <option value="text">Teksti (suosittele)</option>
-                    <option value="point">Piste</option>
-                    <option value="box">Laatikko</option>
+                    <option value="point">Piste (tarkempi)</option>
+                    <option value="box">Laatikko (alue)</option>
                 </select>
-                <div class="param-description">Valitse miten segmentoidaan kuva</div>
+                <div class="param-description">Valitse miten segmentoidaan kuva. "Piste" on tarkempi kuin "Teksti"</div>
             </div>
 
             <div class="control-row">
                 <label for="segmentationPrompt">Segmentointi Prompt:</label>
                 <textarea id="segmentationPrompt" placeholder="Esim: 'talon julkisivu', 'ikkunat', 'ovi'">talon julkisivu</textarea>
-                <div class="param-description">Kuvaile mitä haluat segmentoida</div>
+                <div class="param-description">Kuvaile mitä haluat segmentoida. Suosittele: 'facade', 'wall', 'window', 'door' (englanniksi)</div>
             </div>
 
             <div class="control-row">
