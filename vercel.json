@@ -1,18 +1,15 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
-  "outputDirectory": ".",
-  "functions": {
-    "api/predictions/route.js": {
-      "maxDuration": 30
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
     },
-    "api/predictions/[id]/route.js": {
-      "maxDuration": 10
-    },
-    "api/get-api-key.js": {
-      "maxDuration": 10
+    {
+      "source": "/(.*)",
+      "destination": "/$1"
     }
-  },
+  ],
   "headers": [
     {
       "source": "/(.*)",
