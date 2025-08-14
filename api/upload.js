@@ -17,18 +17,18 @@ module.exports = async function handler(req, res) {
         // Convert base64 to buffer
         const buffer = Buffer.from(imageData, 'base64');
         
-        // Create multipart/form-data with proper formatting
+        // Create multipart/form-data with proper binary handling
         const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);
         
-        // Build multipart body correctly
-        let body = '';
-        body += `--${boundary}\r\n`;
-        body += `Content-Disposition: form-data; name="file"; filename="${fileName || 'house-facade.jpg'}"\r\n`;
-        body += `Content-Type: ${contentType || 'image/jpeg'}\r\n`;
-        body += '\r\n';
-        body += buffer.toString('binary');
-        body += '\r\n';
-        body += `--${boundary}--\r\n`;
+        // Build multipart body with proper line endings and binary data
+        const formData = Buffer.concat([
+            Buffer.from(`--${boundary}\r\n`),
+            Buffer.from(`Content-Disposition: form-data; name="file"; filename="${fileName || 'house-facade.jpg'}"\r\n`),
+            Buffer.from(`Content-Type: ${contentType || 'image/jpeg'}\r\n`),
+            Buffer.from('\r\n'),
+            buffer,
+            Buffer.from(`\r\n--${boundary}--\r\n`)
+        ]);
         
         // Upload to Replicate
         const response = await fetch('https://api.replicate.com/v1/uploads', {
@@ -36,9 +36,9 @@ module.exports = async function handler(req, res) {
             headers: {
                 'Authorization': `Token ${apiKey}`,
                 'Content-Type': `multipart/form-data; boundary=${boundary}`,
-                'Content-Length': Buffer.byteLength(body)
+                'Content-Length': formData.length.toString()
             },
-            body: body
+            body: formData
         });
         
         if (!response.ok) {
@@ -65,7 +65,11 @@ module.exports = async function handler(req, res) {
         });
         
     } catch (error) {
-        console.error('Upload error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('Upload handler error:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            message: 'Failed to process upload request',
+            details: error.message
+        });
     }
 }
