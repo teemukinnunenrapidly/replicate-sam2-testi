@@ -153,7 +153,7 @@ class ReplicateAPITester {
     }
 
     async loadAPIKey() {
-        // Yritetään ensin hakea API key Vercel environment variableista
+        // Hae API key Vercel environment variableista
         try {
             const response = await fetch('/api/get-api-key');
             if (response.ok) {
@@ -168,15 +168,32 @@ class ReplicateAPITester {
             console.log('Vercel API endpoint ei toimi:', error);
         }
         
-        // Jos ei Vercel endpointia, käytetään localStorage (kehitysympäristö)
+        // Jos Vercel endpoint ei toimi, käytä localStorage (kehitysympäristö)
         const savedKey = localStorage.getItem('replicate_api_key');
         
         if (savedKey) {
             this.apiKey = savedKey;
             console.log('API key haettu localStorage:sta');
         } else {
-            console.log('Ei API key:tä, kysytään käyttäjältä');
-            this.promptAPIKey();
+            // Ei API key:tä saatavilla - näytä virheviesti
+            console.error('API key ei ole saatavilla! Tarkista Vercel environment variables.');
+            this.showAPIKeyError();
+        }
+    }
+
+    // Näytä virheviesti API key:n puuttumisesta
+    showAPIKeyError() {
+        const errorMessage = 'API key ei ole saatavilla! Tarkista että Vercel integration on toiminnassa.';
+        console.error(errorMessage);
+        
+        // Näytä virheviesti käyttöliittymässä
+        const statusContainer = document.getElementById('statusContainer');
+        const statusMessage = document.getElementById('statusMessage');
+        
+        if (statusContainer && statusMessage) {
+            statusContainer.style.display = 'block';
+            statusMessage.textContent = errorMessage;
+            statusMessage.className = 'status error';
         }
     }
 
@@ -187,25 +204,6 @@ class ReplicateAPITester {
             apiKeyLength: this.apiKey ? this.apiKey.length : 0,
             apiKeyStart: this.apiKey ? this.apiKey.substring(0, 10) + '...' : 'none'
         });
-    }
-
-    promptAPIKey() {
-        // Vercelissä ei tarvitse promptata, environment variable hoitaa
-        if (typeof process !== 'undefined' && process.env && process.env.REPLICATE_API_TOKEN) {
-            this.apiKey = process.env.REPLICATE_API_TOKEN;
-            return;
-        }
-        
-        // Kehitysympäristössä promptataan käyttäjältä
-        const apiKey = prompt('Syötä Replicate API key:');
-        
-        if (apiKey && apiKey.trim()) {
-            this.apiKey = apiKey.trim();
-            localStorage.setItem('replicate_api_key', this.apiKey);
-        } else {
-            alert('API key on pakollinen!');
-            this.promptAPIKey();
-        }
     }
 
     handleImageUpload(event) {
@@ -260,8 +258,8 @@ class ReplicateAPITester {
         }
 
         if (!this.apiKey) {
-            this.promptAPIKey();
-            if (!this.apiKey) return;
+            this.showAPIKeyError();
+            return;
         }
 
         const processType = document.getElementById('processType').value;
