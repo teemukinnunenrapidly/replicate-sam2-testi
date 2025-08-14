@@ -1,9 +1,7 @@
 {
   "version": 2,
   "functions": {
-    "api/get-api-key.js": {
-      "runtime": "nodejs18.x"
-    }
+    "api/get-api-key.js": {}
   },
   "rewrites": [
     {
