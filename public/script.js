@@ -427,7 +427,7 @@ class ReplicateAPITester {
         const interval = 5000; // 5 seconds
 
         while (attempts < maxAttempts) {
-            const response = await fetch(`/api/predictions/${predictionId}`, {
+            const response = await fetch(`/api/predictions-status?id=${predictionId}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
