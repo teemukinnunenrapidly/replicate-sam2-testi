@@ -30,28 +30,22 @@ module.exports = async function handler(req, res) {
         // Convert base64 to buffer
         const buffer = Buffer.from(imageData, 'base64');
         
-        // Create multipart/form-data manually
-        const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);
-        const formData = [
-            `--${boundary}`,
-            `Content-Disposition: form-data; name="file"; filename="${fileName || 'house-facade.jpg'}"`,
-            `Content-Type: ${contentType || 'image/jpeg'}`,
-            '',
-            buffer.toString('binary'),
-            `--${boundary}--`
-        ];
-        
-        const body = formData.join('\r\n');
+        // Create FormData using proper API
+        const FormData = require('form-data');
+        const form = new FormData();
+        form.append('file', buffer, {
+            filename: fileName || 'house-facade.jpg',
+            contentType: contentType || 'image/jpeg'
+        });
         
         // Upload to Replicate
         const response = await fetch('https://api.replicate.com/v1/uploads', {
             method: 'POST',
             headers: {
                 'Authorization': `Token ${apiKey}`,
-                'Content-Type': `multipart/form-data; boundary=${boundary}`,
-                'Content-Length': Buffer.byteLength(body)
+                ...form.getHeaders()
             },
-            body: body
+            body: form
         });
         
         if (!response.ok) {
