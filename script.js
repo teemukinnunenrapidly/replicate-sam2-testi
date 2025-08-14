@@ -324,8 +324,8 @@ class ReplicateAPITester {
             console.log('Image converted to base64, length:', base64Data.length);
             
             // Lähetä kuva Vercel proxy endpointin kautta
-            console.log('Sending request to /api/up...');
-            const response = await fetch('/api/up', {
+            console.log('Sending request to /api/upload...');
+            const response = await fetch('/api/upload', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
