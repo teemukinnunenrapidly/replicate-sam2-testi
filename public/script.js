@@ -443,6 +443,24 @@ class ReplicateAPITester {
             
             if (prediction.status === 'succeeded') {
                 console.log('Prediction succeeded:', prediction);
+                
+                // Käsittele FileOutput objects (Replicate API v1.0.0+)
+                if (prediction.output && Array.isArray(prediction.output)) {
+                    // Uusi formaatti - FileOutput objects
+                    const processedOutput = prediction.output.map(fileOutput => {
+                        if (typeof fileOutput === 'object' && fileOutput.url) {
+                            return fileOutput.url; // Käytä URL:ia suoraan
+                        } else if (typeof fileOutput === 'string') {
+                            return fileOutput; // Vanha formaatti - suora URL
+                        }
+                        return fileOutput;
+                    });
+                    
+                    // Korvaa output käsitellyllä versiolla
+                    prediction.processedOutput = processedOutput;
+                    console.log('Processed output URLs:', processedOutput);
+                }
+                
                 return prediction;
             } else if (prediction.status === 'failed') {
                 console.error('Prediction failed:', prediction);
@@ -690,14 +708,27 @@ class ReplicateAPITester {
         }
 
         // Näytä segmentointitulokset
-        if (this.segmentationResult && this.segmentationResult.output) {
+        if (this.segmentationResult && (this.segmentationResult.output || this.segmentationResult.processedOutput)) {
             if (segmentationResultImage) {
-                if (Array.isArray(this.segmentationResult.output)) {
-                    segmentationResultImage.src = this.segmentationResult.output[0];
-                    segmentCount.textContent = this.segmentationResult.output.length;
-                } else {
-                    segmentationResultImage.src = this.segmentationResult.output;
+                // Käytä käsiteltyä outputia jos saatavilla (FileOutput objects)
+                const outputToUse = this.segmentationResult.processedOutput || this.segmentationResult.output;
+                
+                if (Array.isArray(outputToUse)) {
+                    // Näytä ensimmäinen segmentoitu kuva
+                    const imageUrl = outputToUse[0];
+                    if (typeof imageUrl === 'string' && imageUrl.startsWith('http')) {
+                        segmentationResultImage.src = imageUrl;
+                        segmentCount.textContent = outputToUse.length;
+                    } else {
+                        console.error('Invalid image URL:', imageUrl);
+                        segmentationResultImage.src = 'https://via.placeholder.com/400x300/ff0000/ffffff?text=Virheellinen+kuva+URL';
+                    }
+                } else if (typeof outputToUse === 'string' && outputToUse.startsWith('http')) {
+                    segmentationResultImage.src = outputToUse;
                     segmentCount.textContent = '1';
+                } else {
+                    console.error('Invalid output format:', outputToUse);
+                    segmentationResultImage.src = 'https://via.placeholder.com/400x300/ff0000/ffffff?text=Virheellinen+output+formaatti';
                 }
             }
             
