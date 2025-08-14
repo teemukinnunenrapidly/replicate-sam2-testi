@@ -319,12 +319,36 @@ class ReplicateAPITester {
                 type: this.currentImage.type
             });
             
-            // Muunna kuva data URL:ksi (Replicate API vaatii tämän)
-            const dataUrl = await this.fileToDataURL(this.currentImage);
-            console.log('Image converted to data URL, length:', dataUrl.length);
+            // Muunna kuva base64:ksi
+            const base64Data = await this.fileToBase64(this.currentImage);
+            console.log('Image converted to base64, length:', base64Data.length);
             
-            // Palauta data URL suoraan (ei tarvitse erillistä uploadia)
-            return dataUrl;
+            // Lähetä kuva Vercel proxy endpointin kautta
+            console.log('Sending request to /api/upload...');
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    imageData: base64Data,
+                    fileName: this.currentImage.name || 'house-facade.jpg',
+                    contentType: this.currentImage.type || 'image/jpeg'
+                })
+            });
+            
+            console.log('Response status:', response.status);
+            console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('Upload failed with status:', response.status, errorData);
+                throw new Error(errorData.error || `Upload failed: ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            console.log('Upload successful:', result);
+            return result.uploadUrl;
             
         } catch (error) {
             console.error('Upload error:', error);
@@ -332,13 +356,15 @@ class ReplicateAPITester {
         }
     }
     
-    // Apumetodi kuvan muuntamiseen data URL:ksi
-    fileToDataURL(file) {
+    // Apumetodi kuvan muuntamiseen base64:ksi
+    fileToBase64(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onload = () => {
-                resolve(reader.result);
+                // Poista "data:image/jpeg;base64," etuliite
+                const base64 = reader.result.split(',')[1];
+                resolve(base64);
             };
             reader.onerror = error => reject(error);
         });
@@ -348,9 +374,9 @@ class ReplicateAPITester {
         try {
             console.log('Aloitetaan kuvan segmentointi...');
             
-            // Hae kuva data URL:na (ei tarvitse erillistä uploadia)
-            const imageDataUrl = await this.uploadImageToReplicate();
-            console.log('Image data URL ready for segmentation');
+            // Hae kuva Replicate:lle ja saa upload URL
+            const imageUrl = await this.uploadImageToReplicate();
+            console.log('Image uploaded to Replicate, URL:', imageUrl);
             
             // SAM-2 segmentointi
             const response = await fetch('https://api.replicate.com/v1/predictions', {
@@ -362,7 +388,7 @@ class ReplicateAPITester {
                 body: JSON.stringify({
                     version: this.SAM2_MODEL,
                     input: {
-                        image: imageDataUrl,  // Käytä data URL:ia suoraan
+                        image: imageUrl,  // Käytä Replicate upload URL:ia
                         prompt_type: this.promptType,
                         points_per_side: this.pointsPerSide,
                         pred_iou_thresh: this.predIouThresh,
@@ -387,9 +413,9 @@ class ReplicateAPITester {
         try {
             console.log('Aloitetaan segmenttien maalaus...');
             
-            // Hae kuva data URL:na (ei tarvitse erillistä uploadia)
-            const imageDataUrl = await this.uploadImageToReplicate();
-            console.log('Image data URL ready for painting');
+            // Hae kuva Replicate:lle ja saa upload URL
+            const imageUrl = await this.uploadImageToReplicate();
+            console.log('Image uploaded to Replicate, URL:', imageUrl);
             
             // Valitse malli ja parametrit
             const modelId = document.getElementById('paintingModel').value; // Get the selected model from the UI
@@ -401,7 +427,7 @@ class ReplicateAPITester {
             
             // Muodosta input data mallin mukaan
             const inputData = {
-                image: imageDataUrl,  // Käytä data URL:ia suoraan
+                image: imageUrl,  // Käytä Replicate upload URL:ia
                 mask: segments,  // Segmentointitulokset
                 prompt: document.getElementById('paintPrompt').value, // Get the prompt from the UI
                 strength: parseFloat(document.getElementById('strength').value), // Get the strength from the UI
