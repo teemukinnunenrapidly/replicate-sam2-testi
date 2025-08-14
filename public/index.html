@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Replicate SAM-2 Testi</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🏠 Talon Maalaus Visualisointi</h1>
+        <p class="subtitle">Lataa talon kuva ja katso miten se näyttäisi eri väreillä!</p>
+        
+        <!-- API Test Section -->
+        <div class="api-test-section">
+            <h3>API Test</h3>
+            <button id="testApiBtn" class="btn btn-primary">Testaa API</button>
+            <div id="apiTestResult"></div>
+        </div>
+        
+        <!-- Kuva Upload -->
+        <div class="upload-section" id="uploadSection">
+            <h2>📸 Lataa Talon Kuva</h2>
+            <p>Vedä ja pudota kuva tähän tai klikkaa valitaksesi tiedoston</p>
+            <input type="file" id="imageInput" accept="image/*" style="display: none;">
+            <button class="btn btn-primary" onclick="document.getElementById('imageInput').click()">
+                Valitse Kuva
+            </button>
+            <div id="imagePreview"></div>
+        </div>
+
+        <!-- Segmentointi Asetukset -->
+        <div class="control-group" id="segmentationControls">
+            <h3>🎯 Segmentointi Asetukset</h3>
+            
+            <div class="control-row">
+                <label for="promptType">Prompt Tyyppi:</label>
+                <select id="promptType">
+                    <option value="text">Teksti (suosittele)</option>
+                    <option value="point">Piste</option>
+                    <option value="box">Laatikko</option>
+                </select>
+                <div class="param-description">Valitse miten segmentoidaan kuva</div>
+            </div>
+
+            <div class="control-row">
+                <label for="segmentationPrompt">Segmentointi Prompt:</label>
+                <textarea id="segmentationPrompt" placeholder="Esim: 'talon julkisivu', 'ikkunat', 'ovi'">talon julkisivu</textarea>
+                <div class="param-description">Kuvaile mitä haluat segmentoida</div>
+            </div>
+
+            <div class="control-row">
+                <label for="pointsPerSide">Pisteet Per Sivu:</label>
+                <input type="range" id="pointsPerSide" min="8" max="64" value="32" step="8">
+                <span id="pointsPerSideValue">32</span>
+                <div class="param-description">Segmentointi tarkkuus (8-64)</div>
+            </div>
+
+            <div class="control-row">
+                <label for="predIouThresh">IoU Kynnys:</label>
+                <input type="range" id="predIouThresh" min="0.5" max="1.0" value="0.88" step="0.01">
+                <span id="predIouThreshValue">0.88</span>
+                <div class="param-description">Segmentointi laadun kynnys (0.5-1.0)</div>
+            </div>
+
+            <div class="control-row">
+                <label for="stabilityScoreThresh">Vakauden Kynnys:</label>
+                <input type="range" id="stabilityScoreThresh" min="0.5" max="1.0" value="0.95" step="0.01">
+                <span id="stabilityScoreThreshValue">0.95</span>
+                <div class="param-description">Segmentointi vakauden kynnys (0.5-1.0)</div>
+            </div>
+        </div>
+
+        <!-- Maalaus Asetukset -->
+        <div class="control-group" id="paintingControls">
+            <h3>🎨 Maalaus Asetukset</h3>
+            
+            <div class="control-row">
+                <label for="paintingModel">Maalausmalli:</label>
+                <select id="paintingModel">
+                    <option value="sdxl">SDXL (Suositeltu - $0.05)</option>
+                    <option value="controlnet">ControlNet + SDXL ($0.06)</option>
+                    <option value="realistic">Realistic Vision ($0.04)</option>
+                    <option value="sd15">SD 1.5 Inpainting ($0.03)</option>
+                    <option value="dreamshaper">DreamShaper ($0.03)</option>
+                </select>
+                <div class="param-description">Valitse AI malli maalauksen generointiin</div>
+            </div>
+
+            <div class="control-row">
+                <label for="strength">Muutoksen Voimakkuus:</label>
+                <input type="range" id="strength" min="0.1" max="1.0" value="0.8" step="0.1">
+                <span id="strengthValue">0.8</span>
+                <div class="param-description">Kuinka paljon kuvaa muutetaan (0.1-1.0)</div>
+            </div>
+
+            <div class="control-row">
+                <label for="guidanceScale">Ohjausaste:</label>
+                <input type="range" id="guidanceScale" min="1.0" max="20.0" value="7.5" step="0.5">
+                <span id="guidanceScaleValue">7.5</span>
+                <div class="param-description">AI:n ohjauksen voimakkuus (1.0-20.0)</div>
+            </div>
+
+            <div class="control-row">
+                <label for="imageSize">Kuvan Koko:</label>
+                <select id="imageSize">
+                    <option value="1024x1024">1024x1024 (Suositeltu)</option>
+                    <option value="768x768">768x768 (Nopeampi)</option>
+                    <option value="512x512">512x512 (Nopein)</option>
+                </select>
+                <div class="param-description">Generoitavan kuvan resoluutio</div>
+            </div>
+
+            <!-- SDXL Parametrit -->
+            <div class="model-params" id="sdxlParams" style="display: none;">
+                <h4>SDXL Parametrit</h4>
+                <div class="control-row">
+                    <label for="scheduler">Scheduler:</label>
+                    <select id="scheduler">
+                        <option value="K_EULER">K_EULER (Suositeltu)</option>
+                        <option value="K_EULER_ANCESTRAL">K_EULER_ANCESTRAL</option>
+                        <option value="DDIM">DDIM</option>
+                    </select>
+                </div>
+                <div class="control-row">
+                    <label for="refineType">Refine Tyyppi:</label>
+                    <select id="refineType">
+                        <option value="expert_ensemble_refiner">Expert Ensemble Refiner</option>
+                        <option value="base_image_refiner">Base Image Refiner</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- ControlNet Parametrit -->
+            <div class="model-params" id="controlnetParams" style="display: none;">
+                <h4>ControlNet Parametrit</h4>
+                <div class="control-row">
+                    <label for="controlnetType">ControlNet Tyyppi:</label>
+                    <select id="controlnetType">
+                        <option value="canny">Canny (Reunat)</option>
+                        <option value="depth">Depth (Syvyys)</option>
+                        <option value="pose">Pose (Asento)</option>
+                    </select>
+                </div>
+                <div class="control-row">
+                    <label for="controlnetStrength">ControlNet Voimakkuus:</label>
+                    <input type="range" id="controlnetStrength" min="0.0" max="2.0" value="1.0" step="0.1">
+                    <span id="controlnetStrengthValue">1.0</span>
+                </div>
+            </div>
+
+            <!-- Realistic Vision Parametrit -->
+            <div class="model-params" id="realisticParams" style="display: none;">
+                <h4>Realistic Vision Parametrit</h4>
+                <div class="control-row">
+                    <label for="realisticStrength">Realismin Voimakkuus:</label>
+                    <input type="range" id="realisticStrength" min="0.0" max="1.0" value="0.7" step="0.1">
+                    <span id="realisticStrengthValue">0.7</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Prosessin Tyyppi -->
+        <div class="control-group">
+            <h3>⚙️ Prosessin Tyyppi</h3>
+            <div class="control-row">
+                <label for="processType">Prosessi:</label>
+                <select id="processType">
+                    <option value="segmentation_only">Vain Segmentointi ($0.025)</option>
+                    <option value="painting">Segmentointi + Maalaus</option>
+                </select>
+                <div class="param-description">Valitse haluatko vain segmentoida vai myös maalata</div>
+            </div>
+        </div>
+
+        <!-- Generoi Nappi -->
+        <div class="generate-section">
+            <button id="generateBtn" class="btn btn-generate">🚀 Generoi segmentointi ($0.025)</button>
+        </div>
+
+        <!-- Status ja Progress -->
+        <div id="statusContainer" class="status-container" style="display: none;">
+            <div id="statusMessage" class="status info">Valmistellaan...</div>
+            <div class="progress-bar">
+                <div id="progressFill" class="progress-fill"></div>
+            </div>
+        </div>
+
+        <!-- Kustannustiedot -->
+        <div id="costInfo" class="cost-info" style="display: none;">
+            <h4>💰 Kustannustiedot</h4>
+            <p>Segmentointi: <span id="segmentationCost">~$0.025</span></p>
+            <p>Maalaus: <span id="paintingCost">~$0.05</span></p>
+            <p>Yhteensä: <span id="totalCost">~$0.075</span></p>
+            <div id="modelDescription">SDXL on suositeltu yleiskäyttöön. Korkealaatuinen inpainting ja vakaat tulokset.</div>
+        </div>
+
+        <!-- Segmentointi Tulokset -->
+        <div id="segmentationResultsSection" class="results-section" style="display: none;">
+            <h3>🎯 Segmentointi Tulokset</h3>
+            <div class="results-grid">
+                <div class="result-item">
+                    <h4>Alkuperäinen Kuva</h4>
+                    <img id="originalImage" src="" alt="Alkuperäinen kuva">
+                </div>
+                <div class="result-item">
+                    <h4>Segmentoitu Kuva</h4>
+                    <img id="segmentationResultImage" src="" alt="Segmentointi tulos">
+                </div>
+            </div>
+            <div class="result-details">
+                <p><strong>Prompt:</strong> <span id="segmentationPrompt">-</span></p>
+                <p><strong>Prompt Tyyppi:</strong> <span id="promptTypeValue">-</span></p>
+                <p><strong>Segmenttejä:</strong> <span id="segmentCount">-</span></p>
+                <p><strong>Luottamuspisteet:</strong> <span id="confidenceScore">-</span></p>
+            </div>
+        </div>
+
+        <!-- Maalaus Tulokset -->
+        <div id="resultsSection" class="results-section" style="display: none;">
+            <h3>🎨 Maalaus Tulokset</h3>
+            <div class="results-grid">
+                <div class="result-item">
+                    <h4>Alkuperäinen Kuva</h4>
+                    <img id="originalResult" src="" alt="Alkuperäinen kuva">
+                </div>
+                <div class="result-item">
+                    <h4>Muokattu Kuva</h4>
+                    <img id="processedResult" src="" alt="Muokattu kuva">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple API test function
+        async function testAPI() {
+            const resultDiv = document.getElementById('apiTestResult');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch('/api/test');
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `<div class="success">✅ API working: ${JSON.stringify(data)}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ API failed: ${response.status}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ API error: ${error.message}</div>`;
+            }
+        }
+        
+        // Add event listener
+        document.getElementById('testApiBtn').addEventListener('click', testAPI);
+    </script>
+    
+    <script src="script.js"></script>
+</body>
+</html>
