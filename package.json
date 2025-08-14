@@ -11,7 +11,8 @@
     "open": "open http://localhost:8001",
     "dev": "python3 server.py",
     "test": "curl -I http://localhost:8001",
-    "clean": "rm -f *.pyc __pycache__/* server.log 2>/dev/null || true"
+    "clean": "rm -f *.pyc __pycache__/* server.log 2>/dev/null || true",
+    "vercel-build": "echo 'Vercel build completed'"
   },
   "keywords": [
     "test",
@@ -22,7 +23,13 @@
   "author": "Teemu Kinnunen",
   "license": "MIT",
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0"
   },
   "repository": {
     "type": "git",
