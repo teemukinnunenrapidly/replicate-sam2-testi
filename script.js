@@ -14,7 +14,7 @@ class ReplicateAPITester {
                 description: 'Korkealaatuinen inpainting'
             },
             controlnet: {
-                version: 'jagilley/controlnet-sdxl:ad20b5b6a29e0e3c8b58b5c2c0c0c0c0c0c0c0c0c',
+                version: 'jagilley/controlnet-sdxl:ad20b5b6a29e0e3c8b58b5c2c0c0c0c0c0c0c0c',
                 name: 'ControlNet + SDXL ($0.06)',
                 description: 'Tarkka rakenteen säilyttäminen'
             },
@@ -24,7 +24,7 @@ class ReplicateAPITester {
                 description: 'Fotorealistinen ulkoasu'
             },
             sd15: {
-                version: 'stability-ai/stable-diffusion-2-inpainting:38a5b5b6a29e0e3c8b58b5c2c0c0c0c0c0c0c0c0c',
+                version: 'stability-ai/stable-diffusion-2-inpainting:38a5b5b6a29e0e3c8b58b5c2c0c0c0c0c0c0c0c',
                 name: 'SD 1.5 Inpainting ($0.03)',
                 description: 'Nopea ja edullinen'
             },

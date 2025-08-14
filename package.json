@@ -2,7 +2,6 @@
   "name": "replicate-testi",
   "version": "1.0.0",
   "description": "Vercel-deployed test environment for Replicate SAM-2 integration",
-  "type": "module",
   "main": "index.html",
   "scripts": {
     "dev": "echo 'Development server not needed for Vercel'",

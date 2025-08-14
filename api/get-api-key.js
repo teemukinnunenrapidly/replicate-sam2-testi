@@ -1,4 +1,4 @@
-export default function handler(req, res) {
+module.exports = function handler(req, res) {
     // Validate request method
     if (req.method !== 'GET') {
         return res.status(405).json({ 
