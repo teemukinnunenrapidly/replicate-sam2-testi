@@ -12,7 +12,7 @@ class ReplicateAPITester {
         this.replicate = null;
         
         // Mallin versiot - Replicate API vaatii tarkan version hashin
-        this.SAM2_MODEL = 'meta/sam-2:2c7b381af7ba6b0f71744066c4aba9c6f3b95f02d7bb110d7a0f0b1aaec12329';
+        this.SAM2_MODEL = 'meta/sam-2:fe97b453a6455861e3bac769b441ca1f1086110da7466dbb65cf1eecfd60dc83';
         this.MODELS = {
             sdxl: {
                 version: 'stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b',

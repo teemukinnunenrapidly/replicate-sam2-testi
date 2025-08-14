@@ -51,7 +51,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<Predictio
     });
 
     // SAM-2 model version - Meta SAM-2
-    const SAM2_MODEL = "meta/sam-2:2c7b381af7ba6b0f71744066c4aba9c6f3b95f02d7bb110d7a0f0b1aaec12329";
+    const SAM2_MODEL = "meta/sam-2:fe97b453a6455861e3bac769b441ca1f1086110da7466dbb65cf1eecfd60dc83";
     
     // Create prediction with webhook support (optional)
     const predictionOptions: any = {
