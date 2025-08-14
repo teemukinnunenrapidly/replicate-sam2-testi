@@ -40,6 +40,12 @@ class ReplicateAPITester {
     }
 
     initializeEventListeners() {
+        // Kuva upload
+        const imageInput = document.getElementById('imageInput');
+        if (imageInput) {
+            imageInput.addEventListener('change', (e) => this.handleImageUpload(e));
+        }
+
         // Tarkista että elementit ovat olemassa ennen käsittelyä
         const uploadSection = document.getElementById('uploadSection');
         if (uploadSection) {
