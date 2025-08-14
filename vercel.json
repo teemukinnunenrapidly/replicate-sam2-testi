@@ -3,5 +3,16 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "installCommand": "npm install",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "functions": {
+    "app/api/predictions/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/predictions/[id]/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/webhooks/route.ts": {
+      "maxDuration": 30
+    }
+  }
 }
