@@ -1,5 +1,5 @@
 {
-  "/api/webhooks/route": "app/api/webhooks/route.js",
   "/api/predictions/[id]/route": "app/api/predictions/[id]/route.js",
+  "/api/webhooks/route": "app/api/webhooks/route.js",
   "/api/predictions/route": "app/api/predictions/route.js"
 }
