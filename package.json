@@ -1,24 +1,17 @@
 {
   "name": "replicate-testi",
   "version": "1.0.0",
-  "description": "Paikallinen testiympäristö replicate-testiä varten",
-  "main": "server.py",
+  "description": "Vercel-deployed test environment for Replicate SAM-2 integration",
+  "main": "index.html",
   "scripts": {
-    "start": "python3 server.py",
-    "start-bg": "python3 server.py > server.log 2>&1 &",
-    "stop": "pkill -f 'python3 server.py' || echo 'Ei käynnissä olevia palvelimia'",
-    "status": "lsof -i :8001 >/dev/null 2>&1 && echo '🟢 Palvelin on käynnissä' || echo '🔴 Palvelin ei ole käynnissä'",
-    "open": "open http://localhost:8001",
-    "dev": "python3 server.py",
-    "test": "curl -I http://localhost:8001",
-    "clean": "rm -f *.pyc __pycache__/* server.log 2>/dev/null || true",
     "vercel-build": "echo 'Vercel build completed'"
   },
   "keywords": [
-    "test",
-    "local",
-    "development",
-    "replicate"
+    "replicate",
+    "sam-2",
+    "ai",
+    "image-segmentation",
+    "vercel"
   ],
   "author": "Teemu Kinnunen",
   "license": "MIT",
@@ -30,9 +23,5 @@
   },
   "devDependencies": {
     "@types/node": "^18.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "."
   }
 }

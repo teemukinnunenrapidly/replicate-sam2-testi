@@ -6,6 +6,14 @@
       "destination": "/index.html"
     }
   ],
+  "functions": {
+    "api/upload.js": {
+      "maxDuration": 30
+    },
+    "api/get-api-key.js": {
+      "maxDuration": 10
+    }
+  },
   "headers": [
     {
       "source": "/(.*)",
