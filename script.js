@@ -256,10 +256,17 @@ class ReplicateAPITester {
     }
 
     showImagePreview(dataUrl) {
-        const previewImage = document.getElementById('previewImage');
-        if (previewImage) {
-            previewImage.src = dataUrl;
-            previewImage.style.display = 'block';
+        const imagePreview = document.getElementById('imagePreview');
+        if (imagePreview) {
+            imagePreview.innerHTML = `
+                <div class="preview-container">
+                    <h4>📸 Ladattu Kuva:</h4>
+                    <img src="${dataUrl}" alt="Esikatselu" style="max-width: 100%; max-height: 300px; border-radius: 8px;">
+                    <p><strong>Tiedosto:</strong> ${this.currentImage.name}</p>
+                    <p><strong>Koko:</strong> ${(this.currentImage.size / 1024 / 1024).toFixed(2)} MB</p>
+                    <p><strong>Tyyppi:</strong> ${this.currentImage.type}</p>
+                </div>
+            `;
         }
         
         const originalResult = document.getElementById('originalResult');
