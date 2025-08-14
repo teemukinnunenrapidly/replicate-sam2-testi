@@ -423,8 +423,8 @@ class ReplicateAPITester {
     async waitForPredictionCompletion(predictionId) {
         console.log(`Waiting for prediction ${predictionId} to complete...`);
         let attempts = 0;
-        const maxAttempts = 100; // Max 100 attempts
-        const interval = 5000; // 5 seconds
+        const maxAttempts = 120; // Max 120 attempts (10 minuuttia)
+        const interval = 2000; // 2 seconds (nopeampi polling)
 
         while (attempts < maxAttempts) {
             const response = await fetch(`/api/predictions-status?id=${predictionId}`, {
@@ -439,7 +439,13 @@ class ReplicateAPITester {
             }
             
             const prediction = await response.json();
-            console.log(`Prediction status: ${prediction.status}, attempts: ${attempts + 1}`);
+            
+            // Parempi status logging
+            const elapsedTime = (attempts + 1) * interval / 1000;
+            console.log(`Prediction status: ${prediction.status}, attempts: ${attempts + 1}, elapsed: ${elapsedTime}s`);
+            
+            // Näytä progress käyttäjälle
+            this.updateProgress(prediction.status, attempts + 1, elapsedTime);
             
             if (prediction.status === 'succeeded') {
                 console.log('Prediction succeeded:', prediction);
@@ -475,6 +481,39 @@ class ReplicateAPITester {
         }
         
         throw new Error(`Prediction ${predictionId} did not complete within ${maxAttempts * interval / 1000} seconds.`);
+    }
+
+    updateProgress(status, attempts, elapsedTime) {
+        // Päivitä progress bar
+        const progressBar = document.getElementById('progressBar');
+        if (progressBar) {
+            const maxTime = 600; // 10 minuuttia max
+            const progress = Math.min((elapsedTime / maxTime) * 100, 100);
+            progressBar.style.width = `${progress}%`;
+            
+            // Päivitä status teksti
+            const statusText = document.getElementById('statusText');
+            if (statusText) {
+                let statusMessage = '';
+                switch (status) {
+                    case 'starting':
+                        statusMessage = `Aloitetaan... (${elapsedTime}s)`;
+                        break;
+                    case 'processing':
+                        statusMessage = `Käsitellään... (${elapsedTime}s)`;
+                        break;
+                    case 'succeeded':
+                        statusMessage = 'Valmis!';
+                        break;
+                    case 'failed':
+                        statusMessage = 'Epäonnistui';
+                        break;
+                    default:
+                        statusMessage = `${status}... (${elapsedTime}s)`;
+                }
+                statusText.textContent = statusMessage;
+            }
+        }
     }
 
     async paintSegments(segments) {
