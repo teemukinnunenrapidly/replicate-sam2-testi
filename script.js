@@ -5,7 +5,7 @@ class ReplicateAPITester {
         this.segmentationResult = null;
         this.paintingResult = null;
         
-        // Mallin versiot
+        // Mallin versiot - Replicate API vaatii tarkan version hashin
         this.SAM2_MODEL = 'meta/sam-2:2c7b381af7ba6b0f71744066c4aba9c6f3b95f02d7bb110d7a0f0b1aaec12329';
         this.MODELS = {
             sdxl: {
@@ -442,10 +442,10 @@ class ReplicateAPITester {
                     version: this.SAM2_MODEL,
                     input: {
                         image: imageUrl,  // Käytä Replicate upload URL:ia
-                        prompt_type: this.promptType,
-                        points_per_side: this.pointsPerSide,
-                        pred_iou_thresh: this.predIouThresh,
-                        stability_score_thresh: this.stabilityScoreThresh
+                        prompt_type: document.getElementById('promptType').value || 'text',
+                        points_per_side: parseInt(document.getElementById('pointsPerSide').value) || 32,
+                        pred_iou_thresh: parseFloat(document.getElementById('predIouThresh').value) || 0.88,
+                        stability_score_thresh: parseFloat(document.getElementById('stabilityScoreThresh').value) || 0.95
                     }
                 })
             });
@@ -488,9 +488,9 @@ class ReplicateAPITester {
             const inputData = {
                 image: imageUrl,  // Käytä Replicate upload URL:ia
                 mask: segments,  // Segmentointitulokset
-                prompt: document.getElementById('paintPrompt').value, // Get the prompt from the UI
-                strength: parseFloat(document.getElementById('strength').value), // Get the strength from the UI
-                guidance_scale: parseFloat(document.getElementById('guidanceScale').value), // Get the guidance scale from the UI
+                prompt: document.getElementById('paintPrompt')?.value || 'house painting',
+                strength: parseFloat(document.getElementById('strength')?.value) || 0.8,
+                guidance_scale: parseFloat(document.getElementById('guidanceScale')?.value) || 7.5,
                 num_inference_steps: 20
             };
             
