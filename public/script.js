@@ -418,8 +418,8 @@ class ReplicateAPITester {
     async waitForPredictionCompletion(predictionId) {
         console.log(`Waiting for prediction ${predictionId} to complete...`);
         let attempts = 0;
-        const maxAttempts = 120; // Max 120 attempts (10 minuuttia)
-        const interval = 2000; // 2 seconds (nopeampi polling)
+        const maxAttempts = 180; // Max 180 attempts (15 minuuttia)
+        let interval = 5000; // 5 seconds (alkuun hitaampi)
 
         while (attempts < maxAttempts) {
             const response = await fetch(`/api/predictions-status?id=${predictionId}`, {
@@ -436,8 +436,15 @@ class ReplicateAPITester {
             const prediction = await response.json();
             
             // Parempi status logging
-            const elapsedTime = (attempts + 1) * interval / 1000;
+            const elapsedTime = (attempts + 1) * 5; // 5 sekuntia per attempt
             console.log(`Prediction status: ${prediction.status}, attempts: ${attempts + 1}, elapsed: ${elapsedTime}s`);
+            
+            // Adaptive polling - nopeampi kun status muuttuu
+            if (prediction.status === 'processing' || prediction.status === 'succeeded' || prediction.status === 'failed') {
+                interval = 2000; // 2 sekuntia kun aktiivinen
+            } else if (prediction.status === 'starting') {
+                interval = 10000; // 10 sekuntia kun aloittaa
+            }
             
             // Näytä progress käyttäjälle
             this.updateProgress(prediction.status, attempts + 1, elapsedTime);
@@ -490,7 +497,12 @@ class ReplicateAPITester {
             await this.delay(interval);
         }
         
-        throw new Error(`Prediction ${predictionId} did not complete within ${maxAttempts * interval / 1000} seconds.`);
+        // Jos ollaan "starting" tilassa liian kauan, näytä warning
+        if (attempts > 60) { // 5 minuuttia
+            console.warn(`Warning: Prediction ${predictionId} has been in "starting" state for ${elapsedTime}s. This might indicate a queue issue.`);
+        }
+        
+        throw new Error(`Prediction ${predictionId} did not complete within ${maxAttempts * 5 / 60} minutes. Consider trying again later.`);
     }
 
     updateProgress(status, attempts, elapsedTime) {
