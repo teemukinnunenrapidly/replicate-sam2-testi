@@ -276,7 +276,7 @@ class ReplicateAPITester {
             this.showStatus('Maalataan segmentoidut alueet...', 'processing');
             this.showProgress(70);
             
-            this.paintingResult = await this.paintSegments(imageUrl, this.segmentationResult);
+            this.paintingResult = await this.paintSegments(this.segmentationResult);
             console.log('Maalaus valmis:', this.paintingResult);
             
             this.showStatus('Valmis! Kuva on muokattu onnistuneesti.', 'success');
@@ -319,173 +319,119 @@ class ReplicateAPITester {
                 type: this.currentImage.type
             });
             
-            // Muunna kuva base64:ksi
-            const base64Data = await this.fileToBase64(this.currentImage);
-            console.log('Image converted to base64, length:', base64Data.length);
+            // Muunna kuva data URL:ksi (Replicate API vaatii tämän)
+            const dataUrl = await this.fileToDataURL(this.currentImage);
+            console.log('Image converted to data URL, length:', dataUrl.length);
             
-            // Lähetä kuva Vercel proxy endpointin kautta
-            console.log('Sending request to /api/upload...');
-            const response = await fetch('/api/upload', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    imageData: base64Data,
-                    fileName: this.currentImage.name || 'house-facade.jpg',
-                    contentType: this.currentImage.type || 'image/jpeg'
-                })
-            });
-            
-            console.log('Response status:', response.status);
-            console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-            
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error('Upload failed with status:', response.status, errorData);
-                throw new Error(errorData.error || `Upload failed: ${response.statusText}`);
-            }
-            
-            const result = await response.json();
-            console.log('Upload successful:', result);
-            return result.uploadUrl;
+            // Palauta data URL suoraan (ei tarvitse erillistä uploadia)
+            return dataUrl;
             
         } catch (error) {
             console.error('Upload error:', error);
             throw new Error(`Kuvan lataus epäonnistui: ${error.message}`);
         }
     }
-
-    // Apumetodi kuvan muuntamiseen base64:ksi
-    fileToBase64(file) {
+    
+    // Apumetodi kuvan muuntamiseen data URL:ksi
+    fileToDataURL(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onload = () => {
-                // Poista "data:image/jpeg;base64," etuliite
-                const base64 = reader.result.split(',')[1];
-                resolve(base64);
+                resolve(reader.result);
             };
             reader.onerror = error => reject(error);
         });
     }
 
-    async segmentImage(imageUrl) {
-        const promptType = document.getElementById('promptType').value;
-        const prompt = document.getElementById('segmentationPrompt').value;
-        const pointsPerSide = parseInt(document.getElementById('pointsPerSide').value);
-        const predIouThresh = parseFloat(document.getElementById('predIouThresh').value);
-        const stabilityScoreThresh = parseFloat(document.getElementById('stabilityScoreThresh').value);
-        
-        // SAM-2 optimoitu input
-        const inputData = {
-            image: imageUrl,
-            prompt_type: promptType, // text, point, tai box
-            prompt: prompt,
-            points_per_side: pointsPerSide,
-            pred_iou_thresh: predIouThresh,
-            stability_score_thresh: stabilityScoreThresh
-        };
+    async segmentImage() {
+        try {
+            console.log('Aloitetaan kuvan segmentointi...');
+            
+            // Hae kuva data URL:na (ei tarvitse erillistä uploadia)
+            const imageDataUrl = await this.uploadImageToReplicate();
+            console.log('Image data URL ready for segmentation');
+            
+            // SAM-2 segmentointi
+            const response = await fetch('https://api.replicate.com/v1/predictions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Token ${this.apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    version: this.SAM2_MODEL,
+                    input: {
+                        image: imageDataUrl,  // Käytä data URL:ia suoraan
+                        prompt_type: this.promptType,
+                        points_per_side: this.pointsPerSide,
+                        pred_iou_thresh: this.predIouThresh,
+                        stability_score_thresh: this.stabilityScoreThresh
+                    }
+                })
+            });
 
-        // Jos käytetään point-tyyppiä, muunna prompt koordinaateiksi
-        if (promptType === 'point') {
-            // Point-tyyppi: "x,y" koordinaatit
-            // Käytetään kuvan keskikohtaa esimerkkinä
-            inputData.prompt = "256,256"; // 512x512 kuvan keskikohta
-        } else if (promptType === 'box') {
-            // Box-tyyppi: "x1,y1,x2,y2" koordinaatit
-            // Käytetään kuvan vasenta yläkulmaa esimerkkinä
-            inputData.prompt = "0,0,512,512"; // Koko kuva
+            if (!response.ok) {
+                throw new Error(`API request failed: ${response.statusText}`);
+            }
+
+            const prediction = await response.json();
+            return await this.waitForCompletion(prediction.id);
+        } catch (error) {
+            console.error('Segmentointi epäonnistui:', error);
+            throw new Error(`Segmentointi epäonnistui: ${error.message}`);
         }
-        // Text-tyyppi käyttää alkuperäisen promptin sellaisenaan
-
-        console.log('SAM-2 segmentointi:', inputData);
-
-        // Käytä SAM-2 mallia
-        const prediction = await this.createPrediction(this.SAM2_MODEL, inputData);
-        
-        // Odota valmistumista
-        return await this.waitForCompletion(prediction.id);
     }
 
-    async paintSegments(imageUrl, segments) {
-        const selectedModel = document.getElementById('paintingModel').value;
-        const prompt = document.getElementById('paintPrompt').value;
-        const strength = parseFloat(document.getElementById('strength').value);
-        const guidanceScale = parseFloat(document.getElementById('guidanceScale').value);
-        const imageSize = document.getElementById('imageSize').value;
-        
-        // Muunna kuvakoko stringistä numeroiksi
-        const [width, height] = imageSize.split('x').map(Number);
-        
-        console.log('Maalaus parametrit:', { selectedModel, prompt, strength, guidanceScale, width, height });
-        console.log('Segmentointitulokset:', segments);
-        
-        // Valitse mallin ID
-        const modelId = this.MODELS[selectedModel];
-        
-        // Mallikohtaiset parametrit
-        let inputData = {
-            image: imageUrl,
-            mask: segments.output, // SAM-2:n maski
-            prompt: prompt,
-            negative_prompt: 'blurry, low quality, distorted, unrealistic, artifacts',
-            num_inference_steps: 20,
-            guidance_scale: guidanceScale,
-            strength: strength
-        };
-        
-        // Lisää mallikohtaiset parametrit
-        if (selectedModel === 'sdxl') {
-            const refineType = document.getElementById('refineType').value;
-            const scheduler = document.getElementById('scheduler').value;
+    async paintSegments(segments) {
+        try {
+            console.log('Aloitetaan segmenttien maalaus...');
             
-            inputData = {
-                ...inputData,
-                width: width,
-                height: height,
-                refine: refineType,
-                scheduler: scheduler,
-                seed: Math.floor(Math.random() * 1000000)
-            };
-        } else if (selectedModel === 'controlnet') {
-            const controlnetType = document.getElementById('controlnetType').value;
-            const controlnetStrength = parseFloat(document.getElementById('controlnetStrength').value);
+            // Hae kuva data URL:na (ei tarvitse erillistä uploadia)
+            const imageDataUrl = await this.uploadImageToReplicate();
+            console.log('Image data URL ready for painting');
             
-            inputData = {
-                ...inputData,
-                controlnet_type: controlnetType,
-                controlnet_strength: controlnetStrength,
-                width: width,
-                height: height
-            };
-        } else if (selectedModel === 'realistic') {
-            const realisticStrength = parseFloat(document.getElementById('realisticStrength').value);
+            // Valitse malli ja parametrit
+            const modelId = document.getElementById('paintingModel').value; // Get the selected model from the UI
+            const model = this.MODELS[modelId];
             
-            inputData = {
-                ...inputData,
-                strength: realisticStrength,
-                width: width,
-                height: height
+            if (!model) {
+                throw new Error(`Tuntematon malli: ${modelId}`);
+            }
+            
+            // Muodosta input data mallin mukaan
+            const inputData = {
+                image: imageDataUrl,  // Käytä data URL:ia suoraan
+                mask: segments,  // Segmentointitulokset
+                prompt: document.getElementById('paintPrompt').value, // Get the prompt from the UI
+                strength: parseFloat(document.getElementById('strength').value), // Get the strength from the UI
+                guidance_scale: parseFloat(document.getElementById('guidanceScale').value), // Get the guidance scale from the UI
+                num_inference_steps: 20
             };
-        } else if (selectedModel === 'sd15') {
-            inputData = {
-                ...inputData,
-                width: 512,
-                height: 512
-            };
-        } else if (selectedModel === 'dreamshaper') {
-            inputData = {
-                ...inputData,
-                width: width,
-                height: height
-            };
+            
+            // Lisää mallikohtaiset parametrit
+            if (modelId === 'sdxl') {
+                inputData.scheduler = document.getElementById('scheduler').value; // Get scheduler from UI
+                inputData.refine = document.getElementById('refineType').value; // Get refine type from UI
+            } else if (modelId === 'controlnet') {
+                inputData.control_type = document.getElementById('controlnetType').value; // Get controlnet type from UI
+                inputData.control_strength = parseFloat(document.getElementById('controlnetStrength').value); // Get controlnet strength from UI
+            } else if (modelId === 'realistic') {
+                inputData.realism_strength = parseFloat(document.getElementById('realisticStrength').value); // Get realistic strength from UI
+            }
+            
+            console.log('Maalaus input:', inputData);
+            
+            // Luo prediction
+            const prediction = await this.createPrediction(model.version, inputData);
+            
+            // Odota valmistumista
+            return await this.waitForCompletion(prediction.id);
+            
+        } catch (error) {
+            console.error('Maalaus epäonnistui:', error);
+            throw new Error(`Maalaus epäonnistui: ${error.message}`);
         }
-
-        console.log('Maalaus input:', inputData);
-
-        const prediction = await this.createPrediction(modelId, inputData);
-        return await this.waitForCompletion(prediction.id);
     }
 
     async createPrediction(modelVersion, inputData) {
