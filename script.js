@@ -317,7 +317,7 @@ class ReplicateAPITester {
             const base64Data = await this.fileToBase64(this.currentImage);
             
             // Lähetä kuva Vercel proxy endpointin kautta
-            const response = await fetch('/api/upload', {
+            const response = await fetch('/api/up', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
