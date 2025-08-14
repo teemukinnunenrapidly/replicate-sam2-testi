@@ -18,7 +18,15 @@
   },
   "rewrites": [
     {
-      "source": "/",
+      "source": "/style.css",
+      "destination": "/style.css"
+    },
+    {
+      "source": "/script.js",
+      "destination": "/script.js"
+    },
+    {
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ],
