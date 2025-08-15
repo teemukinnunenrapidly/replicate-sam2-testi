@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
       });
     }
 
-    const { imageData, promptType, pointsPerSide, predIouThresh, stabilityScoreThresh } = req.body;
+    const { imageData, promptType, pointsPerSide, predIouThresh, stabilityScoreThresh, modelId, inputData } = req.body;
 
     if (!imageData) {
       return res.status(400).json({ 
@@ -30,15 +30,46 @@ module.exports = async (req, res) => {
       });
     }
 
+    const replicate = new Replicate({
+      auth: process.env.REPLICATE_API_TOKEN,
+    });
+
+    // Jos modelId on annettu, kyseessä on maalaus (ei segmentointi)
+    if (modelId) {
+      console.log("Creating painting prediction with model:", modelId);
+      
+      // Mallin versiot
+      const MODELS = {
+        sdxl: 'stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b',
+        controlnet: 'jagilley/controlnet-sdxl:ad20b5b6a29e0e3c8b58b5c2c0c0c0c0c0c0c0c',
+        realistic: 'stability-ai/realistic-vision:5a7c381af7ba6b0f71744066c4aba9c6f3b95f02d7bb110d7a0f0b1aaec12329',
+        sd15: 'stability-ai/stable-diffusion-2-inpainting:38a5b5b6a29e0e3c8b58b5c2c0c0c0c0c0c0c0c',
+        dreamshaper: 'cjwbw/dreamshaper:5a7c381af7ba6b0f71744066c4aba9c6f3b95f02d7bb110d7a0f0b1aaec12329'
+      };
+
+      const modelVersion = MODELS[modelId];
+      if (!modelVersion) {
+        return res.status(400).json({ 
+          detail: `Unknown model: ${modelId}` 
+        });
+      }
+
+      const prediction = await replicate.predictions.create({
+        version: modelVersion,
+        input: inputData || {},
+      });
+
+      console.log("Painting prediction created:", prediction);
+      res.status(201).json(prediction);
+      return;
+    }
+
+    // Muussa tapauksessa kyseessä on SAM-2 segmentointi
     console.log("Creating SAM-2 prediction with:", {
       promptType: promptType || "text",
       pointsPerSide: pointsPerSide || 32,
       predIouThresh: predIouThresh || 0.88,
       stabilityScoreThresh: stabilityScoreThresh || 0.95,
-    });
-
-    const replicate = new Replicate({
-      auth: process.env.REPLICATE_API_TOKEN,
     });
 
     // SAM-2 model version - latest working version

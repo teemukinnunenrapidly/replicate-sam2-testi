@@ -393,29 +393,31 @@ class ReplicateAPITester {
 
             console.log('Lähetetään segmentointi kutsu...');
             
+            // Muunna suomenkielinen prompt englanniksi
+            const finnishPrompt = document.getElementById('promptType')?.value || 'text';
+            const englishPrompt = this.translatePromptToEnglish(finnishPrompt);
+            
+            // SAM-2 prompt handling - käytä point promptia tarkempaan segmentointiin
+            let promptType = 'text';
+            if (englishPrompt === 'facade' || englishPrompt === 'wall' || englishPrompt === 'window' || englishPrompt === 'door') {
+                promptType = 'point'; // Tarkempi segmentointi
+            }
+            
+            const body = JSON.stringify({
+                imageData: imageDataUrl,
+                promptType: promptType,
+                pointsPerSide: parseInt(document.getElementById('pointsPerSide')?.value) || 32,
+                predIouThresh: parseFloat(document.getElementById('predIouThresh')?.value) || 0.88,
+                stabilityScoreThresh: parseFloat(document.getElementById('predIouThresh')?.value) || 0.95
+            });
+            
             // Käytetään uutta Next.js tyylistä endpointtia
             const response = await fetch('/api/predictions', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                // Muunna suomenkielinen prompt englanniksi
-                const finnishPrompt = document.getElementById('promptType')?.value || 'text';
-                const englishPrompt = this.translatePromptToEnglish(finnishPrompt);
-                
-                // SAM-2 prompt handling - käytä point promptia tarkempaan segmentointiin
-                let promptType = 'text';
-                if (englishPrompt === 'facade' || englishPrompt === 'wall' || englishPrompt === 'window' || englishPrompt === 'door') {
-                    promptType = 'point'; // Tarkempi segmentointi
-                }
-                
-                const body = JSON.stringify({
-                    imageData: imageDataUrl,
-                    promptType: promptType,
-                    pointsPerSide: parseInt(document.getElementById('pointsPerSide')?.value) || 32,
-                    predIouThresh: parseFloat(document.getElementById('predIouThresh')?.value) || 0.88,
-                    stabilityScoreThresh: parseFloat(document.getElementById('stabilityScoreThresh')?.value) || 0.95
-                });
+                body: body
             });
 
             if (!response.ok) {
@@ -642,9 +644,10 @@ class ReplicateAPITester {
         try {
             console.log('Aloitetaan segmenttien maalaus...');
             
-            // Hae kuva Replicate:lle ja saa upload URL
-            const imageUrl = await this.uploadImageToReplicate();
-            console.log('Image uploaded to Replicate, URL:', imageUrl);
+            // Käytä nykyistä kuvaa suoraan
+            if (!this.currentImageDataUrl) {
+                throw new Error('Kuvaa ei ole ladattu.');
+            }
             
             // Valitse malli ja parametrit
             const paintingModel = document.getElementById('paintingModel');
@@ -662,7 +665,7 @@ class ReplicateAPITester {
             
             // Muodosta input data mallin mukaan
             const inputData = {
-                image: imageUrl,  // Käytä Replicate upload URL:ia
+                image: this.currentImageDataUrl,  // Käytä nykyistä kuvaa
                 mask: segments,  // Segmentointitulokset
                 prompt: document.getElementById('paintPrompt')?.value || 'house painting',
                 strength: parseFloat(document.getElementById('strength')?.value) || 0.8,
@@ -694,28 +697,29 @@ class ReplicateAPITester {
             
             console.log('Maalaus input:', inputData);
             
-            // Luo prediction käyttäen HTTP API:a (väliaikainen)
-            const response = await fetch('https://api.replicate.com/v1/predictions', {
+            // Käytä Vercel API endpointtia maalauksen luomiseen
+            const response = await fetch('/api/predictions', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Token ${this.apiKey}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    version: model.version,
-                    input: inputData
+                    imageData: this.currentImageDataUrl,
+                    modelId: modelId,
+                    inputData: inputData
                 })
             });
             
             if (!response.ok) {
-                throw new Error(`API request failed: ${response.statusText}`);
+                const errorData = await response.json();
+                throw new Error(`Maalaus kutsu epäonnistui: ${errorData.detail || response.statusText}`);
             }
             
             const prediction = await response.json();
             console.log('Paint prediction created:', prediction);
             
-            // Odota valmistumista
-            return await this.waitForCompletion(prediction.id);
+            // Odota valmistumista käyttäen samaa polling logiikkaa
+            return await this.waitForPredictionCompletion(prediction.id);
         } catch (error) {
             console.error('Maalaus epäonnistui:', error);
             throw new Error(`Maalaus epäonnistui: ${error.message}`);
